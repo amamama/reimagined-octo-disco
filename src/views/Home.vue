@@ -1,9 +1,11 @@
 <template>
-    <p> fuga </p>
+    <PokemonTable></PokemonTable>
 </template>
 
 <script lang="ts">
+import PokemonTable from '@/components/PokemonTable.vue';
 export default {
-  name: 'home',
+    name: 'home',
+    components: {PokemonTable},
 };
 </script>
