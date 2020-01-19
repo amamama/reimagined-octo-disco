@@ -1,5 +1,5 @@
 <template>
-    <PokemonTable></PokemonTable>
+    <!--PokemonTable></PokemonTable -->
 </template>
 
 <script lang="ts">
