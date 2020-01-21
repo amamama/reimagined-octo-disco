@@ -82,7 +82,8 @@
                             {{ item.item.pokemonId }}
                         </template>
                         <template v-else-if="header.value === 'pokemon'">
-                            {{ item.item.pokemon }}
+                            <div :class="findPokemon(item.item.pokemon).pokemon.cls.join(' ')"></div>
+                                {{ item.item.pokemon }}
                         </template>
                         <template v-else-if="header.value === 'ability'">
                             {{ getHiddenAbility(item.item.pokemon) }}
