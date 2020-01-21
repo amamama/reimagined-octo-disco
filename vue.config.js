@@ -6,6 +6,6 @@ module.exports = {
     host: "localhost"
   },
   publicPath: process.env.NODE_ENV === 'production'
-      ? '/my-project/'
+      ? '/reimagined-octo-disco/'
       : '/'
 }

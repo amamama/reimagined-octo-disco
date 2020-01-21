@@ -55,7 +55,7 @@
                     v-for="header of headers"
                     :key="header.value"
                     :class="header.value"
-                    @click="isBall(header) && (newFace[header.value] = !newFace[header.value])"
+                    @click="isBall(header) && (newFace.ballSet[header.value] = !newFace.ballSet[header.value])"
                 >
                     <v-autocomplete
                         v-if="header.value == 'pokemon'"
@@ -65,7 +65,7 @@
                         return-object
                         @input="updateNewFace"
                     ></v-autocomplete>
-                    <ball-img v-else-if="newFace[header.value]" :kind="header.value"></ball-img>
+                    <ball-img v-else-if="newFace.ballSet[header.value]" :kind="header.value"></ball-img>
                 </td>
             </tr>
         </template>
@@ -75,7 +75,7 @@
                     v-for="header of item.headers"
                     :key="header.value"
                     :class="header.value"
-                    @click="isBall(header) && (item.item[header.value] = !item.item[header.value])"
+                    @click="isBall(header) && (item.item.ballSet[header.value] = !item.item.ballSet[header.value])"
                 >
                     <template v-if="!isBall(header)">
                         <template v-if="header.value === 'number'">
@@ -88,7 +88,7 @@
                             {{ getHiddenAbility(item.item.pokemon) }}
                         </template>
                     </template>
-                    <ball-img v-else-if="item.item[header.value]" :kind="header.value"></ball-img>
+                    <ball-img v-else-if="item.item.ballSet[header.value]" :kind="header.value"></ball-img>
                 </td>
             </tr>
         </template>
@@ -104,11 +104,7 @@ import {DataTableHeader} from 'vuetify';
 import BallImage from '@/components/BallImage.vue';
 import pokemonList from '@/assets/po.json';
 
-interface PokemonTableElement {
-    pokemonId: number;
-    pokemon: string;
-    hiddenAbility: boolean[];
-    needAllBall: number; // 0 | 1 | 2 | 3; // 性別不明 | オスのみ | メスのみ | 両方
+interface BallSet {
     love: boolean;
     moon: boolean;
     heavy: boolean;
@@ -118,9 +114,25 @@ interface PokemonTableElement {
     lure: boolean;
     dream: boolean;
     beast: boolean;
+    [key: string]: boolean;
+
 }
 
-const Balls: string[] = [
+interface PokemonTableElement {
+    pokemonId: number;
+    pokemon: string;
+    hiddenAbility: boolean[];
+    ballSet: BallSet;
+    needAllBall: number; // 0 | 1 | 2 | 3; // 性別不明 | オスのみ | メスのみ | 両方
+}
+
+
+interface PokemonTableHeader extends DataTableHeader {
+    text: string;
+    value: string;
+}
+
+const Balls: Array<keyof BallSet> = [
     'love',
     'moon',
     'heavy',
@@ -188,7 +200,7 @@ export default class PokemonTable extends Vue {
     private registering: boolean = false;
     private newFace: PokemonTableElement = this.resetPokemonTableElement();
     private items: PokemonTableElement[] = [];
-    private headers: DataTableHeader[] = [
+    private headers: PokemonTableHeader[] = [
         {text: 'No', value: 'number'},
         {text: 'ポケモン', value: 'pokemon'},
         {text: '隠れ特性', value: 'ability'},
@@ -208,7 +220,7 @@ export default class PokemonTable extends Vue {
     private searchPokemon(poke: any) {
         return poke.pokemon.name;
     }
-    private isBall(header: DataTableHeader): boolean {
+    private isBall(header: PokemonTableHeader): boolean {
         return Balls.includes(header.value);
     }
     private findPokemon(name: string) {
@@ -227,15 +239,17 @@ export default class PokemonTable extends Vue {
             pokemon: '',
             hiddenAbility: [],
             needAllBall: 3,
-            love: false,
-            moon: false,
-            heavy: false,
-            level: false,
-            friend: false,
-            fast: false,
-            lure: false,
-            dream: false,
-            beast: false,
+            ballSet: {
+                love: false,
+                moon: false,
+                heavy: false,
+                level: false,
+                friend: false,
+                fast: false,
+                lure: false,
+                dream: false,
+                beast: false,
+            },
         };
     }
     private havePokemon(name: string): PokemonTableElement | undefined {
@@ -259,6 +273,7 @@ export default class PokemonTable extends Vue {
         this.items.splice(index, 1, this.newFace);
     }
     private registerPokemon() {
+        if(!this.pokemonList.find((p) => p.pokemon.name === this.newFace.pokemon)) { return this.cancel(); }
         if(this.havePokemon(this.newFace.pokemon)) { this.updatePokemon(); }
         else { this.items.push(this.newFace); }
         this.exportItems();
@@ -274,7 +289,7 @@ export default class PokemonTable extends Vue {
                 return prop ? arr[i] ? 2 : 1 : 0;
             }
             return (Balls
-                .map((b, i) => toD3(item[b], i, item.hiddenAbility))
+                .map((b, i) => toD3(item.ballSet[b], i, item.hiddenAbility))
                 .reduce(((a, v) => a * 3 + v), 0));
         }
         const d = this.items.map((item) => (item.needAllBall * 512 + item.pokemonId) * 65536 + encodeBallAndAbility(item));
@@ -304,7 +319,7 @@ export default class PokemonTable extends Vue {
             for(let i = Balls.length - 1; i > 0; i--) {
                 const d = n % 3;
                 ret.hiddenAbility[i] = d === 2;
-                ret[Balls[i]] = d > 0;
+                ret.ballSet[Balls[i]] = d > 0;
                 n = n / 3 | 0;
             }
             return ret;
