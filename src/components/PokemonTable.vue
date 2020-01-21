@@ -6,7 +6,6 @@
         item-key="pokemon"
         sort-by="pokemon"
         :search="search"
-        show-select
     >
         <template v-slot:top>
             <v-toolbar flat>
@@ -17,6 +16,7 @@
                         single-line
                         hide-details
                 ></v-text-field>
+                {{ text }}
                 <v-spacer></v-spacer>
                 <template v-if="!registering">
                     <v-btn @click="registering = true">
@@ -38,7 +38,7 @@
         <template v-slot:header="{props: { headers, mobile }}">
             <thead>
                 <tr>
-                    <th v-for="header of headers" :class="header.value">
+                    <th v-for="header of headers" :key="header.value" :class="header.value">
                         <ball-img v-if="isBall(header)"
                             :kind="header.value"
                         ></ball-img>
@@ -53,6 +53,7 @@
             <tr>
                 <td
                     v-for="header of headers"
+                    :key="header.value"
                     :class="header.value"
                     @click="isBall(header) && (newFace[header.value] = !newFace[header.value])"
                 >
@@ -61,8 +62,8 @@
                         :items="pokemonList"
                         :filter="pokemonFilter"
                         item-text="pokemon.name"
-                        item-value="pokemon.ability"
-                        :search-input.sync="newFace.pokemon"
+                        return-object
+                        @input="updateNewFace"
                     ></v-autocomplete>
                     <ball-img v-else-if="newFace[header.value]" :kind="header.value"></ball-img>
                 </td>
@@ -72,23 +73,27 @@
             <tr>
                 <td
                     v-for="header of item.headers"
+                    :key="header.value"
                     :class="header.value"
                     @click="isBall(header) && (item.item[header.value] = !item.item[header.value])"
                 >
                     <template v-if="!isBall(header)">
-                        <template v-if="header.value == 'number'">
-                            {{ pokemonList.find((p) => p.pokemon.name == item.item.pokemon).number }}
+                        <template v-if="header.value === 'number'">
+                            {{ item.item.pokemonId }}
                         </template>
-                        <template v-else-if="header.value == 'pokemon'">
-                            {{ pokemonList.find((p) => p.pokemon.name == item.item.pokemon).pokemon.name }}
+                        <template v-else-if="header.value === 'pokemon'">
+                            {{ item.item.pokemon }}
                         </template>
-                        <template v-else-if="header.value == 'ability'">
-                            {{ pokemonList.find((p) => p.pokemon.name == item.item.pokemon).abilities.hiddenAbility.join('') }}
+                        <template v-else-if="header.value === 'ability'">
+                            {{ getHiddenAbility(item.item.pokemon) }}
                         </template>
                     </template>
                     <ball-img v-else-if="item.item[header.value]" :kind="header.value"></ball-img>
                 </td>
             </tr>
+        </template>
+        <template v-slot:footer="">
+            {{ debug }}
         </template>
     </v-data-table>
 </template>
@@ -100,9 +105,10 @@ import BallImage from '@/components/BallImage.vue';
 import pokemonList from '@/assets/po.json';
 
 interface PokemonTableElement {
+    pokemonId: number;
     pokemon: string;
     hiddenAbility: boolean[];
-    needAllBall: boolean;
+    needAllBall: number; // 0 | 1 | 2 | 3; // 性別不明 | オスのみ | メスのみ | 両方
     love: boolean;
     moon: boolean;
     heavy: boolean;
@@ -126,30 +132,61 @@ const Balls: string[] = [
     'beast',
 ];
 
+class Number64 {
+    public static from(n: number): string {
+        let ret: string = '';
+        do {
+            ret = Number64.digit[n % 64] + ret;
+            n = n / 64 | 0;
+        } while(n);
+        return ret;
+    }
+    public static to(repr: string): number {
+        let ret: number = 0;
+        do {
+            ret = ret * 64 + Number64.digit.indexOf(repr[0]);
+            repr = repr.slice(1);
+        } while(repr.length > 0);
+        return ret;
+    }
+
+    private static cpAtoZ: number[] = (new Array(26)).fill(0x41).map((n, i) => n + i);
+    private static cp0toSemicolon: number[] = (new Array(12)).fill(0x30).map((n, i) => n + i);
+    private static cpAtoSemicolon: number[] =
+        Number64.cpAtoZ
+        .concat((Number64.cpAtoZ.map((cp) => cp + 0x20))
+        .concat(Number64.cp0toSemicolon));
+    private static digit: string = String.fromCodePoint(...Number64.cpAtoSemicolon);
+    private repr: string;
+    constructor(n: number) {
+        this.repr = Number64.from(n);
+    }
+
+    get number(): number {
+        return Number64.to(this.repr);
+    }
+
+    set number(n: number) {
+        this.repr = Number64.from(n);
+    }
+
+    public toString(): string {
+        return this.repr;
+    }
+}
+
 @Component({
     components: {
         'ball-img': BallImage,
     },
 })
 export default class PokemonTable extends Vue {
-    private text: string = 'hoge';
+    private text: string = '';
+    private debug: string = '';
     private pokemonList = pokemonList;
     private search: string = '';
     private registering: boolean = false;
-    private newFace: PokemonTableElement = {
-        pokemon: '',
-        hiddenAbility: [],
-        needAllBall: false,
-        love: false,
-        moon: false,
-        heavy: false,
-        level: false,
-        friend: false,
-        fast: false,
-        lure: false,
-        dream: false,
-        beast: false,
-    };
+    private newFace: PokemonTableElement = this.resetPokemonTableElement();
     private items: PokemonTableElement[] = [];
     private headers: DataTableHeader[] = [
         {text: 'No', value: 'number'},
@@ -169,18 +206,27 @@ export default class PokemonTable extends Vue {
         return item.pokemon.name.includes(queryText);
     }
     private searchPokemon(poke: any) {
-        // console.log(poke);
         return poke.pokemon.name;
     }
     private isBall(header: DataTableHeader): boolean {
         return Balls.includes(header.value);
     }
-
-    private resetNewFace() {
-        this.newFace = {
+    private findPokemon(name: string) {
+        const pokemon = this.pokemonList.find((p) => p.pokemon.name === name);
+        if(!pokemon) { throw new Error(`nanka okasii :${name}: `); }
+        return pokemon;
+    }
+    private getHiddenAbility(name: string): string {
+        const pokemon = this.findPokemon(name);
+        if(pokemon.abilities.hiddenAbility.length === 0) { return '---'; }
+        return pokemon.abilities.hiddenAbility[0];
+    }
+    private resetPokemonTableElement(): PokemonTableElement {
+        return {
+            pokemonId: 0,
             pokemon: '',
             hiddenAbility: [],
-            needAllBall: false,
+            needAllBall: 3,
             love: false,
             moon: false,
             heavy: false,
@@ -192,18 +238,86 @@ export default class PokemonTable extends Vue {
             beast: false,
         };
     }
+    private havePokemon(name: string): PokemonTableElement | undefined {
+        return this.items.find((item) => item.pokemon === name);
+    }
+    private updateNewFace(p: any) {
+        const oldFace = this.havePokemon(p.pokemon.name);
+        if(oldFace) {
+            this.newFace = oldFace;
+        } else {
+            this.newFace.pokemon = p.pokemon.name;
+            this.newFace.pokemonId = p.number;
+        }
+    }
     private resetRegisterState() {
         this.registering = false;
-        this.resetNewFace();
+        this.newFace = this.resetPokemonTableElement();
+    }
+    private updatePokemon() {
+        const index: number = this.items.findIndex((p) => p.pokemon === this.newFace.pokemon);
+        this.items.splice(index, 1, this.newFace);
     }
     private registerPokemon() {
-        // console.log(this.newFace);
-        // if(this.newFace.pokemon) return this.cancel();
-        this.items.push(this.newFace);
+        if(this.havePokemon(this.newFace.pokemon)) { this.updatePokemon(); }
+        else { this.items.push(this.newFace); }
+        this.exportItems();
         this.resetRegisterState();
     }
     private cancel() {
         this.resetRegisterState();
+    }
+
+    private exportItems() {
+        function encodeBallAndAbility(item: PokemonTableElement): number {
+            function toD3(prop: boolean, i: number, arr: boolean[]): number {
+                return prop ? arr[i] ? 2 : 1 : 0;
+            }
+            return (Balls
+                .map((b, i) => toD3(item[b], i, item.hiddenAbility))
+                .reduce(((a, v) => a * 3 + v), 0));
+        }
+        const d = this.items.map((item) => (item.needAllBall * 512 + item.pokemonId) * 65536 + encodeBallAndAbility(item));
+        const encoded = d.map((n) => (new Number64(n)).toString()).join('');
+        this.debug = encoded;
+        localStorage.setItem('table', encoded);
+    }
+    private importItems(encoded: string) {
+        if(encoded.length % 5 !== 0) { return; }
+        const encodedArr: string[] = [];
+        for(; encoded.length > 0; encoded = encoded.slice(5)) {
+            encodedArr.push(encoded.slice(0, 5));
+        }
+        const decodedArr: number[] = encodedArr.map((s) => Number64.to(s));
+        this.items = decodedArr.map((n) => {
+            const ret: PokemonTableElement = this.resetPokemonTableElement();
+            const need = (n / (65536 * 512) | 0) % 4;
+            const num = ((n / 65536) | 0) % 512;
+            const pokemon = this.pokemonList.find((p) => p.number === num);
+            if(!pokemon) { throw new Error(`import dekinai ${num}`); }
+            const name = pokemon.pokemon.name;
+            ret.hiddenAbility.fill(false);
+            n %= 65536;
+            ret.pokemonId = num;
+            ret.pokemon = name;
+            ret.needAllBall = need;
+            for(let i = Balls.length - 1; i > 0; i--) {
+                const d = n % 3;
+                ret.hiddenAbility[i] = d === 2;
+                ret[Balls[i]] = d > 0;
+                n = n / 3 | 0;
+            }
+            return ret;
+        });
+    }
+    public created() {
+        if(!this.$route.query.table || typeof(this.$route.query.table) !== 'string') {
+            const encodedFromLocalStorage = localStorage.getItem('table');
+            if(encodedFromLocalStorage) { this.importItems(encodedFromLocalStorage); }
+            return;
+        }
+        const encodedFromQuery: string = this.$route.query.table;
+        this.importItems(encodedFromQuery);
     }
 }
 </script>
