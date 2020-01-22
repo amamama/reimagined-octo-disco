@@ -6,6 +6,7 @@
         item-key="pokemon"
         sort-by="pokemon"
         :search="search"
+        :footer-props="{'items-per-page-options': [10, 15, 30, -1]}"
     >
         <template v-slot:top>
             <v-toolbar flat>
@@ -317,7 +318,7 @@ export default class PokemonTable extends Vue {
             ret.pokemonId = num;
             ret.pokemon = name;
             ret.needAllBall = need;
-            for(let i = Balls.length - 1; i > 0; i--) {
+            for(let i = Balls.length - 1; i >= 0; i--) {
                 const d = n % 3;
                 ret.hiddenAbility[i] = d === 2;
                 ret.ballSet[Balls[i]] = d > 0;
