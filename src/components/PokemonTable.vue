@@ -4,7 +4,8 @@
         :hide-default-header="true"
         :items="items"
         item-key="pokemon"
-        sort-by="pokemon"
+        :sort-by="['pokemon']"
+        multi-sort
         :search="search"
         :footer-props="{'items-per-page-options': [10, 15, 30, -1]}"
     >
@@ -64,6 +65,7 @@
                         :filter="pokemonFilter"
                         item-text="pokemon.name"
                         return-object
+                        autofocus
                         @input="updateNewFace"
                     ></v-autocomplete>
                     <ball-img v-else-if="newFace.ballSet[header.value]" :kind="header.value"></ball-img>
