@@ -5,7 +5,8 @@
         :items="items"
         item-key="pokemon"
         :custom-filter="(value, search, item) => (search === null || prettyfilter(item.pokemon, search))"
-        :sort-by="['pokemon']"
+        :sort-by="sortBy"
+        :sort-desc="sortDesc"
         multi-sort
         :search="search"
         :footer-props="{'items-per-page-options': [10, 15, 30, -1]}"
@@ -41,13 +42,19 @@
         <template v-slot:header="{props: { headers, mobile }}">
             <thead>
                 <tr>
-                    <th v-for="header of headers" :key="header.value" :class="header.value">
-                        <ball-img v-if="isBall(header)"
+                    <th v-for="header of headers"
+                        :key="header.value"
+                        :class="header.value"
+                        @click="manageSortBy(header.value)">
+                        <ball-img v-if="isBall(header.value)"
                             :kind="header.value"
                         ></ball-img>
                         <template v-else>
                             {{ header.text }}
                         </template>
+                        <v-icon v-if="isSorted(header.value)">
+                            {{ 'mdi-' + (isDesc(header.value) ? 'chevron-down' : 'chevron-up') }}
+                        </v-icon>
                     </th>
                 </tr>
             </thead>
@@ -58,7 +65,7 @@
                     v-for="header of headers"
                     :key="header.value"
                     :class="header.value"
-                    @click="isBall(header) && (newFace.ballSet[header.value] = !newFace.ballSet[header.value])"
+                    @click="isBall(header.value) && (newFace.ballSet[header.value] = !newFace.ballSet[header.value])"
                 >
                     <v-autocomplete
                         v-if="header.value == 'pokemon'"
@@ -79,9 +86,9 @@
                     v-for="header of item.headers"
                     :key="header.value"
                     :class="header.value"
-                    @click="isBall(header) && (item.item.ballSet[header.value] = !item.item.ballSet[header.value])"
+                    @click="isBall(header.value) && (item.item.ballSet[header.value] = !item.item.ballSet[header.value])"
                 >
-                    <template v-if="!isBall(header)">
+                    <template v-if="!isBall(header.value)">
                         <template v-if="header.value === 'number'">
                             {{ item.item.pokemonId }}
                         </template>
@@ -160,6 +167,8 @@ export default class PokemonTable extends Vue {
     private text: string = '';
     private debug: string = '';
     private pokemonList = pokemonList;
+    private sortBy: string[] = ['pokemon', 'ballSet.moon'];
+    private sortDesc: boolean[] = [false, true];
     private search: string = '';
     private registering: boolean = false;
     private newFace: PokemonTableElement = this.resetPokemonTableElement();
@@ -182,11 +191,34 @@ export default class PokemonTable extends Vue {
         const hira: string = HiraKataConverter.romahira(queryText);
         return text.includes(HiraKataConverter.hirakata((hira)));
     }
-    private pokemonFilter(item: any, queryText: string, itemText: string): boolean {
-        return this.prettyfilter(itemText, queryText);
+    private manageSortBy(str: string) {
+        const path: string = this.isBall(str) ? 'ballSet.' + str : str;
+        const index = this.sortBy.indexOf(path);
+        if(index < 0) {
+            this.sortBy.push(path);
+            this.sortDesc.push(false);
+        } else if(this.sortDesc[index] === false) {
+            this.sortDesc.splice(index, 1, true);
+        } else {
+            this.sortBy.splice(index, 1);
+            this.sortDesc.splice(index, 1);
+        }
+        console.log(this.sortBy);
+        console.log(this.sortDesc);
     }
-    private isBall(header: PokemonTableHeader): boolean {
-        return Balls.includes(header.value);
+    private isSorted(str: string): boolean {
+        const path: string = this.isBall(str) ? 'ballSet.' + str : str;
+        const index = this.sortBy.indexOf(path);
+        return index >= 0;
+    }
+    private isDesc(str: string): boolean {
+        const path: string = this.isBall(str) ? 'ballSet.' + str : str;
+        const index = this.sortBy.indexOf(path);
+        if(index < 0) throw new Error(`sort saretenai ${str}`);
+        return this.sortDesc[index];
+    }
+    private isBall(str: string): boolean {
+        return Balls.includes(str);
     }
     private findPokemon(name: string) {
         const pokemon = this.pokemonList.find((p) => p.pokemon.name === name);
