@@ -4,6 +4,7 @@
         :hide-default-header="true"
         :items="items"
         item-key="pokemon"
+        :custom-filter="(value, search, item) => (search === null || prettyfilter(item.pokemon, search))"
         :sort-by="['pokemon']"
         multi-sort
         :search="search"
@@ -62,7 +63,7 @@
                     <v-autocomplete
                         v-if="header.value == 'pokemon'"
                         :items="pokemonList"
-                        :filter="pokemonFilter"
+                        :filter="(item, queryText, itemText) => (prettyfilter(itemText, queryText))"
                         item-text="pokemon.name"
                         return-object
                         autofocus
@@ -107,6 +108,8 @@ import { Component, Prop, Vue } from 'vue-property-decorator';
 import {DataTableHeader} from 'vuetify';
 import BallImage from '@/components/BallImage.vue';
 import pokemonList from '@/assets/po.json';
+import Number64 from '@/util/Number64';
+import HiraKataConverter from '@/util/HiraKataConverter';
 
 interface BallSet {
     love: boolean;
@@ -148,49 +151,6 @@ const Balls: Array<keyof BallSet> = [
     'beast',
 ];
 
-class Number64 {
-    public static from(n: number): string {
-        let ret: string = '';
-        do {
-            ret = Number64.digit[n % 64] + ret;
-            n = n / 64 | 0;
-        } while(n);
-        return ret;
-    }
-    public static to(repr: string): number {
-        let ret: number = 0;
-        do {
-            ret = ret * 64 + Number64.digit.indexOf(repr[0]);
-            repr = repr.slice(1);
-        } while(repr.length > 0);
-        return ret;
-    }
-
-    private static cpAtoZ: number[] = (new Array(26)).fill(0x41).map((n, i) => n + i);
-    private static cp0toSemicolon: number[] = (new Array(12)).fill(0x30).map((n, i) => n + i);
-    private static cpAtoSemicolon: number[] =
-        Number64.cpAtoZ
-        .concat((Number64.cpAtoZ.map((cp) => cp + 0x20))
-        .concat(Number64.cp0toSemicolon));
-    private static digit: string = String.fromCodePoint(...Number64.cpAtoSemicolon);
-    private repr: string;
-    constructor(n: number) {
-        this.repr = Number64.from(n);
-    }
-
-    get number(): number {
-        return Number64.to(this.repr);
-    }
-
-    set number(n: number) {
-        this.repr = Number64.from(n);
-    }
-
-    public toString(): string {
-        return this.repr;
-    }
-}
-
 @Component({
     components: {
         'ball-img': BallImage,
@@ -218,23 +178,24 @@ export default class PokemonTable extends Vue {
         {text: 'ドリームボール', value: 'dream'},
         {text: 'ウルトラボール', value: 'beast'},
     ];
-    private pokemonFilter(item: any, queryText: string, itemText: string): boolean {
-        return item.pokemon.name.includes(queryText);
+    private prettyfilter(text: string, queryText: string): boolean {
+        const hira: string = HiraKataConverter.romahira(queryText);
+        return text.includes(HiraKataConverter.hirakata((hira)));
     }
-    private searchPokemon(poke: any) {
-        return poke.pokemon.name;
+    private pokemonFilter(item: any, queryText: string, itemText: string): boolean {
+        return this.prettyfilter(itemText, queryText);
     }
     private isBall(header: PokemonTableHeader): boolean {
         return Balls.includes(header.value);
     }
     private findPokemon(name: string) {
         const pokemon = this.pokemonList.find((p) => p.pokemon.name === name);
-        if(!pokemon) { throw new Error(`nanka okasii :${name}: `); }
+        if(!pokemon) throw new Error(`nanka okasii :${name}: `);
         return pokemon;
     }
     private getHiddenAbility(name: string): string {
         const pokemon = this.findPokemon(name);
-        if(pokemon.abilities.hiddenAbility.length === 0) { return '---'; }
+        if(pokemon.abilities.hiddenAbility.length === 0) return '---';
         return pokemon.abilities.hiddenAbility[0];
     }
     private resetPokemonTableElement(): PokemonTableElement {
@@ -277,8 +238,8 @@ export default class PokemonTable extends Vue {
         this.items.splice(index, 1, this.newFace);
     }
     private registerPokemon() {
-        if(!this.pokemonList.find((p) => p.pokemon.name === this.newFace.pokemon)) { return this.cancel(); }
-        if(this.havePokemon(this.newFace.pokemon)) { this.updatePokemon(); }
+        if(!this.pokemonList.find((p) => p.pokemon.name === this.newFace.pokemon)) return this.cancel();
+        if(this.havePokemon(this.newFace.pokemon)) this.updatePokemon();
         else { this.items.push(this.newFace); }
         this.exportItems();
         this.resetRegisterState();
@@ -296,13 +257,15 @@ export default class PokemonTable extends Vue {
                 .map((b, i) => toD3(item.ballSet[b], i, item.hiddenAbility))
                 .reduce(((a, v) => a * 3 + v), 0));
         }
-        const d = this.items.map((item) => (item.needAllBall * 512 + item.pokemonId) * 65536 + encodeBallAndAbility(item));
+        const d = this.items.map(
+            (item) =>
+                (item.needAllBall * 512 + item.pokemonId) * 65536 + encodeBallAndAbility(item));
         const encoded = d.map((n) => (new Number64(n)).toString()).join('');
         this.debug = encoded;
         localStorage.setItem('table', encoded);
     }
     private importItems(encoded: string) {
-        if(encoded.length % 5 !== 0) { return; }
+        if(encoded.length % 5 !== 0) return;
         const encodedArr: string[] = [];
         for(; encoded.length > 0; encoded = encoded.slice(5)) {
             encodedArr.push(encoded.slice(0, 5));
@@ -310,10 +273,10 @@ export default class PokemonTable extends Vue {
         const decodedArr: number[] = encodedArr.map((s) => Number64.to(s));
         this.items = decodedArr.map((n) => {
             const ret: PokemonTableElement = this.resetPokemonTableElement();
-            const need = (n / (65536 * 512) | 0) % 4;
-            const num = ((n / 65536) | 0) % 512;
+            const need = Math.floor(n / (65536 * 512)) % 4;
+            const num = Math.floor(n / 65536) % 512;
             const pokemon = this.pokemonList.find((p) => p.number === num);
-            if(!pokemon) { throw new Error(`import dekinai ${num}`); }
+            if(!pokemon) throw new Error(`import dekinai ${num}`);
             const name = pokemon.pokemon.name;
             ret.hiddenAbility.fill(false);
             n %= 65536;
@@ -324,15 +287,15 @@ export default class PokemonTable extends Vue {
                 const d = n % 3;
                 ret.hiddenAbility[i] = d === 2;
                 ret.ballSet[Balls[i]] = d > 0;
-                n = n / 3 | 0;
+                n = Math.floor(n / 3);
             }
             return ret;
         });
     }
-    public created() {
+    private created() {
         if(!this.$route.query.table || typeof(this.$route.query.table) !== 'string') {
             const encodedFromLocalStorage = localStorage.getItem('table');
-            if(encodedFromLocalStorage) { this.importItems(encodedFromLocalStorage); }
+            if(encodedFromLocalStorage) this.importItems(encodedFromLocalStorage);
             return;
         }
         const encodedFromQuery: string = this.$route.query.table;
