@@ -44,7 +44,7 @@
                 <tr>
                     <th v-for="header of headers"
                         :key="header.value"
-                        :class="header.value"
+                        :class="`${header.value} px-2`"
                         @click="manageSortBy(header.value)">
                         <ball-img v-if="isBall(header.value)"
                             :kind="header.value"
@@ -52,9 +52,16 @@
                         <template v-else>
                             {{ header.text }}
                         </template>
-                        <v-icon v-if="isSorted(header.value)">
+                        <template v-if="isSorted(header.value) >= 0">
+                        <v-icon small>
                             {{ 'mdi-' + (isDesc(header.value) ? 'chevron-down' : 'chevron-up') }}
                         </v-icon>
+                        <v-icon small>
+                            {{ 'mdi-' + `numeric-${(isSorted(header.value) + 1).toString()}-box-outline` }}
+                        </v-icon>
+                        </template>
+                        <template v-else>
+                        </template>
                     </th>
                 </tr>
             </thead>
@@ -64,7 +71,7 @@
                 <td
                     v-for="header of headers"
                     :key="header.value"
-                    :class="header.value"
+                    :class="`${header.value} px-2`"
                     @click="isBall(header.value) && (newFace.ballSet[header.value] = !newFace.ballSet[header.value])"
                 >
                     <v-autocomplete
@@ -89,7 +96,7 @@
                     @click="isBall(header.value) && (item.item.ballSet[header.value] = !item.item.ballSet[header.value])"
                 >
                     <template v-if="!isBall(header.value)">
-                        <template v-if="header.value === 'number'">
+                        <template v-if="header.value === 'pokemonId'">
                             {{ item.item.pokemonId }}
                         </template>
                         <template v-else-if="header.value === 'pokemon'">
@@ -141,11 +148,6 @@ interface PokemonTableElement {
 }
 
 
-interface PokemonTableHeader extends DataTableHeader {
-    text: string;
-    value: string;
-}
-
 const Balls: Array<keyof BallSet> = [
     'love',
     'moon',
@@ -167,14 +169,14 @@ export default class PokemonTable extends Vue {
     private text: string = '';
     private debug: string = '';
     private pokemonList = pokemonList;
-    private sortBy: string[] = ['pokemon', 'ballSet.moon'];
-    private sortDesc: boolean[] = [false, true];
+    private sortBy: string[] = ['pokemon'];
+    private sortDesc: boolean[] = [false];
     private search: string = '';
     private registering: boolean = false;
     private newFace: PokemonTableElement = this.resetPokemonTableElement();
     private items: PokemonTableElement[] = [];
-    private headers: PokemonTableHeader[] = [
-        {text: 'No', value: 'number'},
+    private headers: DataTableHeader[] = [
+        {text: 'No', value: 'pokemonId', sort: (a, b) => a - b},
         {text: 'ポケモン', value: 'pokemon'},
         {text: '隠れ特性', value: 'ability'},
         {text: 'ラブラブボール', value: 'love'},
@@ -203,17 +205,14 @@ export default class PokemonTable extends Vue {
             this.sortBy.splice(index, 1);
             this.sortDesc.splice(index, 1);
         }
-        console.log(this.sortBy);
-        console.log(this.sortDesc);
     }
-    private isSorted(str: string): boolean {
+    private isSorted(str: string): number {
         const path: string = this.isBall(str) ? 'ballSet.' + str : str;
         const index = this.sortBy.indexOf(path);
-        return index >= 0;
+        return index;
     }
     private isDesc(str: string): boolean {
-        const path: string = this.isBall(str) ? 'ballSet.' + str : str;
-        const index = this.sortBy.indexOf(path);
+        const index = this.isSorted(str);
         if(index < 0) throw new Error(`sort saretenai ${str}`);
         return this.sortDesc[index];
     }
@@ -338,9 +337,9 @@ export default class PokemonTable extends Vue {
 
 <style scoped>
     table, tr, td, th {border-collapse: collapse; border-color: aliceblue; }
-    .number {max-width: 60px; width: 60px; min-width: 60px; }
-    .pokemon {max-width: 180px; width: 180px; min-width: 180px; }
-    .ability {max-width: 180px; width: 180px; min-width: 180px;}
+    .pokemonId {max-width: 80px; width: 80px; min-width: 80px; }
+    .pokemon {max-width: 160px; width: 160px; min-width: 160px; }
+    .ability {max-width: 160px; width: 160px; min-width: 160px;}
     .love { background-color: rgba(255, 225, 255, 1); }
     .moon { background-color: rgba(236, 236, 255, 1); }
     .heavy { background-color: rgba(236, 236, 236, 1); }
@@ -350,4 +349,10 @@ export default class PokemonTable extends Vue {
     .lure { background-color: rgba(225, 236, 255, 1); }
     .dream { background-color: rgba(255, 216, 255, 1); }
     .beast { background-color: rgba(216, 225, 255, 1); }
+
+    .love, .moon, .heavy, .level, .friend, .fast, .lure, .dream, .beast {
+        max-width: 80px;
+        width: 80px;
+    }
+
 </style>
