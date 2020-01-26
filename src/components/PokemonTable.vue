@@ -53,14 +53,15 @@
                             {{ header.text }}
                         </template>
                         <template v-if="isSorted(header.value) >= 0">
-                        <v-icon small>
-                            {{ 'mdi-' + (isDesc(header.value) ? 'chevron-down' : 'chevron-up') }}
-                        </v-icon>
-                        <v-icon small>
-                            {{ 'mdi-' + `numeric-${(isSorted(header.value) + 1).toString()}-box-outline` }}
-                        </v-icon>
+                            <v-icon small>
+                                {{ 'mdi-' + (isDesc(header.value) ? 'chevron-down' : 'chevron-up') }}
+                            </v-icon>
+                            <v-icon small>
+                                {{ 'mdi-' + `numeric-${(isSorted(header.value) + 1).toString()}-box-outline` }}
+                            </v-icon>
                         </template>
                         <template v-else>
+                            <v-icon small></v-icon>
                         </template>
                     </th>
                 </tr>
