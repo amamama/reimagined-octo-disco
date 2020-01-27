@@ -171,7 +171,7 @@ export default class PokemonTable extends Vue {
     private text: string = '';
     private debug: string = '';
     private tanepokemonList = tanepokemonList;
-    private pokemonList = pokemonList.filter((p) => this.tanepokemonList.some((q) => q.pokemon === p.pokemon.name));
+    private pokemonList = pokemonList.filter((p) => this.tanepokemonList.some((q) => q.pokemon === p.pokemon.name.split('\n')[0]));
     private sortBy: string[] = ['pokemon'];
     private sortDesc: boolean[] = [false];
     private search: string = '';
