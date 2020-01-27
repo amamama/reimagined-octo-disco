@@ -122,7 +122,8 @@
 import { Component, Prop, Vue } from 'vue-property-decorator';
 import {DataTableHeader} from 'vuetify';
 import BallImage from '@/components/BallImage.vue';
-import pokemonList from '@/assets/po.json';
+import pokemonList from '@/assets/p.json';
+import tanepokemonList from '@/assets/q.json';
 import Number64 from '@/util/Number64';
 import HiraKataConverter from '@/util/HiraKataConverter';
 
@@ -169,7 +170,8 @@ const Balls: Array<keyof BallSet> = [
 export default class PokemonTable extends Vue {
     private text: string = '';
     private debug: string = '';
-    private pokemonList = pokemonList;
+    private tanepokemonList = tanepokemonList;
+    private pokemonList = pokemonList.filter((p) => this.tanepokemonList.some((q) => q.pokemon === p.pokemon.name));
     private sortBy: string[] = ['pokemon'];
     private sortDesc: boolean[] = [false];
     private search: string = '';
