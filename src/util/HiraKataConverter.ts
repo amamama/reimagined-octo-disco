@@ -12,7 +12,8 @@ export default class HiraKataConverter {
         while(str.length) {
             const table = romajiTable.find((({from}) => str.startsWith(from)));
             if(!table) {
-                ret += HiraKataConverter.hira.includes(str[0]) ? str[0] : '';
+                ret += HiraKataConverter.hira.includes(str[0])
+                   || HiraKataConverter.kata.includes(str[0]) ? str[0] : '';
                 str = str.slice(1);
                 continue;
             }

@@ -193,7 +193,9 @@ export default class PokemonTable extends Vue {
         {text: 'ウルトラボール', value: 'beast'},
     ];
     private prettyfilter(text: string, queryText: string): boolean {
+        console.log("text, queryText", text, queryText);
         const hira: string = HiraKataConverter.romahira(queryText);
+        console.log("hira", hira);
         return text.includes(HiraKataConverter.hirakata(hira));
     }
     private manageSortBy(str: string) {
