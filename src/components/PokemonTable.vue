@@ -287,7 +287,7 @@ export default class PokemonTable extends Vue {
 
     private copyLink() {
         this.exportItems();
-        navigator.clipboard.writeText(`${location.protocol}//${location.host}/#/?table=${this.debug}`);
+        navigator.clipboard.writeText(`${location.protocol}//${location.host}${location.pathname}?table=${this.debug}`);
     }
 
     private exportItems() {
