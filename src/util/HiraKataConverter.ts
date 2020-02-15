@@ -24,12 +24,12 @@ export default class HiraKataConverter {
         return ret;
     }
     private static hira: string[]
-        = (new Array(96))
-        .fill(0x3040)
+        = (new Array(90))
+        .fill(0x3041)
         .map((n, i) => String.fromCodePoint(n + i));
     private static kata: string[]
-        = (new Array(96))
-        .fill(0x30A0)
+        = (new Array(90))
+        .fill(0x30A1)
         .map((n, i) => String.fromCodePoint(n + i));
     private static genConverter(from: string[], to: string[]) {
         return (str: string): string => {
