@@ -113,7 +113,7 @@
             </tr>
         </template>
         <template v-slot:footer="">
-            <v-btn @click="exportItems">見せる用リンクを生成</v-btn>
+            <v-btn @click="copyLink">見せる用リンクを生成してクリップボードにコピー</v-btn>
             <a :href="`/#/?table=${debug}`" > 見せる用リンク</a>
         </template>
     </v-data-table>
@@ -283,6 +283,11 @@ export default class PokemonTable extends Vue {
     }
     private cancel() {
         this.resetRegisterState();
+    }
+
+    private copyLink() {
+        this.exportItems();
+        navigator.clipboard.writeText(`${location.protocol}//${location.host}/#/?table=${this.debug}`);
     }
 
     private exportItems() {
