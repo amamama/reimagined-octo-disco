@@ -194,7 +194,7 @@ export default class PokemonTable extends Vue {
     ];
     private prettyfilter(text: string, queryText: string): boolean {
         const hira: string = HiraKataConverter.romahira(queryText);
-        return text.includes(HiraKataConverter.hirakata((hira)));
+        return text.includes(HiraKataConverter.hirakata(hira));
     }
     private manageSortBy(str: string) {
         const path: string = this.isBall(str) ? 'ballSet.' + str : str;
@@ -257,7 +257,7 @@ export default class PokemonTable extends Vue {
     private updateNewFace(p: any) {
         const oldFace = this.havePokemon(p.pokemon.name);
         if(oldFace) {
-            this.newFace = oldFace;
+            this.newFace = JSON.parse(JSON.stringify(oldFace));
         } else {
             this.newFace.pokemon = p.pokemon.name;
             this.newFace.pokemonId = p.number;
