@@ -113,7 +113,8 @@
             </tr>
         </template>
         <template v-slot:footer="">
-            {{ debug }}
+            <v-btn @click="exportItems">見せる用リンクを生成</v-btn>
+            <a :href="`/#/?table=${debug}`" > 見せる用リンク</a>
         </template>
     </v-data-table>
 </template>
