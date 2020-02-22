@@ -333,10 +333,13 @@ export default class PokemonTable extends Vue {
             if (this.isBall(header.value)) item.item.ballSet[header.value] = !item.item.ballSet[header.value];
             if (header.value === 'ability') item.expand(!item.isExpanded);
         } else { //expanded rows
-            if (this.isBall(header.value) && item.needAllBall !== 3 && item.ballSet[header.value]) item.hiddenAbility[header.value] = true;
-            if (this.isBall(header.value) && item.needAllBall === 3) {
-                for(const ball of Balls) {
-                    if(item.ballSet[ball]) item.hiddenAbility[ball] = true;
+            if(this.isBall(header.value) && item.ballSet[header.value]) {
+                if(item.needAllBall === 3) {
+                    for(const ball of Balls) {
+                        if(item.ballSet[ball]) item.hiddenAbility[ball] = true;
+                    }
+                } else {
+                    item.hiddenAbility[header.value] = true;
                 }
             }
         }
