@@ -128,6 +128,7 @@
                         <template v-else-if="header.value === 'pokemon'">
                         </template>
                         <template v-else-if="header.value === 'ability'">
+                            {{ getHiddenAbility(item.pokemon) }}
                         </template>
                     </template>
                     <ball-img v-else-if="item.hiddenAbility[header.value]" :kind="header.value"></ball-img>
@@ -329,10 +330,10 @@ export default class PokemonTable extends Vue {
             if (this.isBall(header.value)) item.item.ballSet[header.value] = !item.item.ballSet[header.value];
             if (header.value === 'ability') item.expand(!item.isExpanded);
         } else { //expanded rows
-            if (this.isBall(header.value) && item.needAllBall !== 3) item.hiddenAbility[header.value] = !item.hiddenAbility[header.value];
+            if (this.isBall(header.value) && item.needAllBall !== 3 && item.ballSet[header.value]) item.hiddenAbility[header.value] = true;
             if (this.isBall(header.value) && item.needAllBall === 3) {
                 for(const ball of Balls) {
-                    if(item.ballSet[ball]) item.hiddenAbility[ball] = !item.hiddenAbility[ball];
+                    if(item.ballSet[ball]) item.hiddenAbility[ball] = true;
                 }
             }
         }
