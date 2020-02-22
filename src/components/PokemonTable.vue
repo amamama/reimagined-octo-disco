@@ -7,9 +7,9 @@
         :custom-filter="(value, search, item) => (search === null || prettyfilter(item.pokemon, search))"
         :sort-by="sortBy"
         :sort-desc="sortDesc"
-        multi-sort
         :search="search"
         :footer-props="{'items-per-page-options': [10, 15, 30, -1]}"
+        multi-sort
     >
         <template v-slot:top>
             <v-toolbar flat>
@@ -94,7 +94,7 @@
                     v-for="header of item.headers"
                     :key="header.value"
                     :class="header.value"
-                    @click="isBall(header.value) && (item.item.ballSet[header.value] = !item.item.ballSet[header.value])"
+                    @click="tdClicked(header, item)"
                 >
                     <template v-if="!isBall(header.value)">
                         <template v-if="header.value === 'pokemonId'">
@@ -113,6 +113,9 @@
                     <ball-img v-else-if="item.item.ballSet[header.value]" :kind="header.value"></ball-img>
                 </td>
             </tr>
+        </template>
+        <template v-slot:expanded-item="item">
+            hoge
         </template>
         <template v-slot:footer="">
             <v-btn @click="copyLink">見せる用リンクを生成してクリップボードにコピー</v-btn>
@@ -292,6 +295,11 @@ export default class PokemonTable extends Vue {
     private copyLink() {
         this.exportItems();
         navigator.clipboard.writeText(`${location.protocol}//${location.host}${location.pathname}#/?table=${this.debug}`);
+    }
+
+    private tdClicked(header: DataTableHeader, item: any) {
+        if(this.isBall(header.value)) item.item.ballSet[header.value] = !item.item.ballSet[header.value];
+        if(header.value === 'ability') item.expand(!item.isExpanded);
     }
 
     private exportItems() {
