@@ -367,15 +367,16 @@ export default class PokemonTable extends Vue {
         const decodedArr: number[] = encodedArr.map((s) => Number64.to(s));
         this.items = decodedArr.map((n) => {
             const ret: PokemonTableElement = this.resetPokemonTableElement();
-            const need = Math.floor(n / (65536 * 512)) % 4;
             const num = Math.floor(n / 65536) % 512;
             const pokemon = this.pokemonList.find((p) => p.number === num);
             if(!pokemon) throw new Error(`import dekinai ${num}`);
             const name = pokemon.pokemon.name;
+            const tp = this.tanepokemonList.find((t) => t.pokemon == name.split('\n')[0]);
+            if(!tp) throw new Error(`tane pokemon dehanai ${name}`);
             n %= 65536;
             ret.pokemonId = num;
             ret.pokemon = name;
-            ret.needAllBall = need;
+            ret.needAllBall = tp.needAllBall;
             for(let i = Balls.length - 1; i >= 0; i--) {
                 const d = n % 3;
                 ret.hiddenAbility[Balls[i]] = d === 2;
