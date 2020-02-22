@@ -108,6 +108,9 @@
                         </template>
                         <template v-else-if="header.value === 'ability'">
                             {{ getHiddenAbility(item.item.pokemon) }}
+                            <v-icon>
+                                {{ 'mdi-' + (item.isExpanded ? 'chevron-up' : 'chevron-down') }}
+                            </v-icon>
                         </template>
                     </template>
                     <ball-img v-else-if="item.item.ballSet[header.value]" :kind="header.value"></ball-img>
