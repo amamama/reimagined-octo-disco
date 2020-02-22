@@ -103,8 +103,8 @@
                         <template v-else-if="header.value === 'pokemon'">
                             <div :class="findPokemon(item.item.pokemon).pokemon.cls.join(' ')"></div>
                             {{ item.item.pokemon }}
-                            <span v-if="(item.item.needAllBall & 2) === 2" class="blue--text">♂</span>
-                            <span v-if="(item.item.needAllBall & 1) === 1" class="red--text">♀</span>
+                            <span v-if="(item.item.needAllBall & 1) === 1" class="blue--text">♂</span>
+                            <span v-if="(item.item.needAllBall & 2) === 2" class="red--text">♀</span>
                         </template>
                         <template v-else-if="header.value === 'ability'">
                             {{ getHiddenAbility(item.item.pokemon) }}
@@ -114,8 +114,25 @@
                 </td>
             </tr>
         </template>
-        <template v-slot:expanded-item="item">
-            hoge
+        <template v-slot:expanded-item="{item, headers}">
+            <tr>
+                <td
+                    v-for="header of headers"
+                    :key="header.value"
+                    :class="header.value"
+                    @click="tdClicked(header, item)"
+                >
+                    <template v-if="!isBall(header.value)">
+                        <template v-if="header.value === 'pokemonId'">
+                        </template>
+                        <template v-else-if="header.value === 'pokemon'">
+                        </template>
+                        <template v-else-if="header.value === 'ability'">
+                        </template>
+                    </template>
+                    <ball-img v-else-if="item.hiddenAbility[header.value]" :kind="header.value"></ball-img>
+                </td>
+            </tr>
         </template>
         <template v-slot:footer="">
             <v-btn @click="copyLink">見せる用リンクを生成してクリップボードにコピー</v-btn>
@@ -150,7 +167,7 @@ interface BallSet {
 interface PokemonTableElement {
     pokemonId: number;
     pokemon: string;
-    hiddenAbility: boolean[];
+    hiddenAbility: BallSet;
     ballSet: BallSet;
     needAllBall: number; // 0 | 1 | 2 | 3; // 性別不明 | オスのみ | メスのみ | 両方
 }
@@ -244,7 +261,17 @@ export default class PokemonTable extends Vue {
         return {
             pokemonId: 0,
             pokemon: '',
-            hiddenAbility: [],
+            hiddenAbility: {
+                love: false,
+                moon: false,
+                heavy: false,
+                level: false,
+                friend: false,
+                fast: false,
+                lure: false,
+                dream: false,
+                beast: false,
+            },
             needAllBall: 3,
             ballSet: {
                 love: false,
@@ -298,14 +325,23 @@ export default class PokemonTable extends Vue {
     }
 
     private tdClicked(header: DataTableHeader, item: any) {
-        if(this.isBall(header.value)) item.item.ballSet[header.value] = !item.item.ballSet[header.value];
-        if(header.value === 'ability') item.expand(!item.isExpanded);
+        if("expand" in item) {
+            if (this.isBall(header.value)) item.item.ballSet[header.value] = !item.item.ballSet[header.value];
+            if (header.value === 'ability') item.expand(!item.isExpanded);
+        } else { //expanded rows
+            if (this.isBall(header.value) && item.needAllBall !== 3) item.hiddenAbility[header.value] = !item.hiddenAbility[header.value];
+            if (this.isBall(header.value) && item.needAllBall === 3) {
+                for(const ball of Balls) {
+                    if(item.ballSet[ball]) item.hiddenAbility[ball] = !item.hiddenAbility[ball];
+                }
+            }
+        }
     }
 
     private exportItems() {
         function encodeBallAndAbility(item: PokemonTableElement): number {
-            function toD3(prop: boolean, i: number, arr: boolean[]): number {
-                return prop ? arr[i] ? 2 : 1 : 0;
+            function toD3(prop: boolean, i: number, arr: BallSet): number {
+                return prop ? arr[Balls[i]] ? 2 : 1 : 0;
             }
             return (Balls
                 .map((b, i) => toD3(item.ballSet[b], i, item.hiddenAbility))
@@ -332,14 +368,13 @@ export default class PokemonTable extends Vue {
             const pokemon = this.pokemonList.find((p) => p.number === num);
             if(!pokemon) throw new Error(`import dekinai ${num}`);
             const name = pokemon.pokemon.name;
-            ret.hiddenAbility.fill(false);
             n %= 65536;
             ret.pokemonId = num;
             ret.pokemon = name;
             ret.needAllBall = need;
             for(let i = Balls.length - 1; i >= 0; i--) {
                 const d = n % 3;
-                ret.hiddenAbility[i] = d === 2;
+                ret.hiddenAbility[Balls[i]] = d === 2;
                 ret.ballSet[Balls[i]] = d > 0;
                 n = Math.floor(n / 3);
             }
