@@ -102,7 +102,9 @@
                         </template>
                         <template v-else-if="header.value === 'pokemon'">
                             <div :class="findPokemon(item.item.pokemon).pokemon.cls.join(' ')"></div>
-                                {{ item.item.pokemon }}
+                            {{ item.item.pokemon }}
+                            <span v-if="(item.item.needAllBall & 2) === 2" class="blue--text">♂</span>
+                            <span v-if="(item.item.needAllBall & 1) === 1" class="red--text">♀</span>
                         </template>
                         <template v-else-if="header.value === 'ability'">
                             {{ getHiddenAbility(item.item.pokemon) }}
@@ -194,9 +196,9 @@ export default class PokemonTable extends Vue {
         {text: 'ウルトラボール', value: 'beast'},
     ];
     private prettyfilter(text: string, queryText: string): boolean {
-        console.log("text, queryText", text, queryText);
+        //console.log("text, queryText", text, queryText);
         const hira: string = HiraKataConverter.romahira(queryText);
-        console.log("hira", hira);
+        //console.log("hira", hira);
         return text.includes(HiraKataConverter.hirakata(hira));
     }
     private manageSortBy(str: string) {
@@ -262,8 +264,10 @@ export default class PokemonTable extends Vue {
         if(oldFace) {
             this.newFace = JSON.parse(JSON.stringify(oldFace));
         } else {
+            const tane = this.tanepokemonList.find((t) => (t.pokemon === p.pokemon.name));
             this.newFace.pokemon = p.pokemon.name;
             this.newFace.pokemonId = p.number;
+            if(tane) this.newFace.needAllBall = tane.needAllBall;
         }
     }
     private resetRegisterState() {
@@ -277,7 +281,7 @@ export default class PokemonTable extends Vue {
     private registerPokemon() {
         if(!this.pokemonList.find((p) => p.pokemon.name === this.newFace.pokemon)) return this.cancel();
         if(this.havePokemon(this.newFace.pokemon)) this.updatePokemon();
-        else { this.items.push(this.newFace); }
+        else this.items.push(this.newFace);
         this.exportItems();
         this.resetRegisterState();
     }
@@ -287,7 +291,7 @@ export default class PokemonTable extends Vue {
 
     private copyLink() {
         this.exportItems();
-        navigator.clipboard.writeText(`${location.protocol}//${location.host}${location.pathname}?table=${this.debug}`);
+        navigator.clipboard.writeText(`${location.protocol}//${location.host}${location.pathname}#/?table=${this.debug}`);
     }
 
     private exportItems() {
