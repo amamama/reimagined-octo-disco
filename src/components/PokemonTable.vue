@@ -404,7 +404,7 @@ export default class PokemonTable extends Vue {
 
 <style scoped>
     table, tr, td, th {border-collapse: collapse; border-color: aliceblue; }
-    .pokemonId {max-width: 80px; width: 80px; min-width: 80px; }
+    .pokemonId {max-width: 120px; width: 120px; min-width: 120px; }
     .pokemon {max-width: 160px; width: 160px; min-width: 160px; }
     .ability {max-width: 160px; width: 160px; min-width: 160px;}
     .love { background-color: rgba(255, 225, 255, 1); }
