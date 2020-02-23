@@ -99,9 +99,9 @@
                     <template v-if="!isBall(header.value)">
                         <template v-if="header.value === 'pokemonId'">
                             {{ item.item.pokemonId }}
+                            <div :class="findPokemon(item.item.pokemon).pokemon.cls.join(' ')"></div>
                         </template>
                         <template v-else-if="header.value === 'pokemon'">
-                            <div :class="findPokemon(item.item.pokemon).pokemon.cls.join(' ')"></div>
                             {{ item.item.pokemon }}
                             <span v-if="(item.item.needAllBall & 1) === 1" class="blue--text">♂</span>
                             <span v-if="(item.item.needAllBall & 2) === 2" class="red--text">♀</span>
@@ -357,8 +357,9 @@ export default class PokemonTable extends Vue {
         const d = this.items.map(
             (item) =>
                 (item.needAllBall * 512 + item.pokemonId) * 65536 + encodeBallAndAbility(item));
-        const encoded = d.map((n) => (new Number64(n)).toString()).join('');
+        const encoded = d.map((n) => (new Number64(n)).toString().padStart(5, 'A')).join('');
         this.debug = encoded;
+        console.log('length', encoded.length);
         localStorage.setItem('table', encoded);
     }
     private importItems(encoded: string) {
