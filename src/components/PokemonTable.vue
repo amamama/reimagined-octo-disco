@@ -108,7 +108,7 @@
                         </template>
                         <template v-else-if="header.value === 'ability'">
                             {{ getHiddenAbility(item.item.pokemon) }}
-                            <v-icon>
+                            <v-icon v-if="haveHiddenAbility(item.item.pokemon)">
                                 {{ 'mdi-' + (item.isExpanded ? 'chevron-up' : 'chevron-down') }}
                             </v-icon>
                         </template>
@@ -261,6 +261,9 @@ export default class PokemonTable extends Vue {
         if(pokemon.abilities.hiddenAbility.length === 0) return '---';
         return pokemon.abilities.hiddenAbility[0];
     }
+    private haveHiddenAbility(name: string) {
+        return this.findPokemon(name).abilities.hiddenAbility.length > 0;
+    }
     private resetPokemonTableElement(): PokemonTableElement {
         return {
             pokemonId: 0,
@@ -331,7 +334,7 @@ export default class PokemonTable extends Vue {
     private tdClicked(header: DataTableHeader, item: any) {
         if("expand" in item) {
             if (this.isBall(header.value)) item.item.ballSet[header.value] = !item.item.ballSet[header.value];
-            if (header.value === 'ability') item.expand(!item.isExpanded);
+            if (header.value === 'ability' && this.haveHiddenAbility(item.item.pokemon)) item.expand(!item.isExpanded);
         } else { //expanded rows
             if(this.isBall(header.value) && item.ballSet[header.value]) {
                 if(item.needAllBall === 3) {
@@ -375,7 +378,7 @@ export default class PokemonTable extends Vue {
             const pokemon = this.pokemonList.find((p) => p.number === num);
             if(!pokemon) throw new Error(`import dekinai ${num}`);
             const name = pokemon.pokemon.name;
-            const tp = this.tanepokemonList.find((t) => t.pokemon == name.split('\n')[0]);
+            const tp = this.tanepokemonList.find((t) => t.pokemon === name.split('\n')[0]);
             if(!tp) throw new Error(`tane pokemon dehanai ${name}`);
             n %= 65536;
             ret.pokemonId = num;
