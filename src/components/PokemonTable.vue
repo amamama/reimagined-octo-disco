@@ -84,6 +84,16 @@
                         autofocus
                         @input="updateNewFace"
                     ></v-autocomplete>
+                    <template v-else-if="header.value === 'ability'">
+                        {{ newFace.pokemon === '' ? '' : getHiddenAbility(newFace.pokemon) }}
+                        <v-icon v-if="false">
+                            ここに隠れ特性を持っており隠れ特性の所持の考慮が必要ないポケモンの場合
+                            （ 両性が存在し少なくとも１つのオシャボで隠れ特性を所持している場合）
+                            は○か✓を出す．
+                            遺伝で増やせないが夢特性を持っている場合は△，
+                            全く持っていない場合は☓を出す
+                        </v-icon>
+                    </template>
                     <ball-img v-else-if="newFace.ballSet[header.value]" :kind="header.value"></ball-img>
                 </td>
             </tr>
@@ -108,12 +118,23 @@
                         </template>
                         <template v-else-if="header.value === 'ability'">
                             {{ getHiddenAbility(item.item.pokemon) }}
-                            <v-icon v-if="haveHiddenAbility(item.item.pokemon)">
+                            <v-icon v-if="false">
+                                ここに隠れ特性を持っており隠れ特性の所持の考慮が必要ないポケモンの場合
+                                （ 両性が存在し少なくとも１つのオシャボで隠れ特性を所持している場合）
+                                は○か✓を出す．
+                                遺伝で増やせないが夢特性を持っている場合は△，
+                                全く持っていない場合は☓を出す
+                            </v-icon>
+                            <v-icon v-else-if="haveHiddenAbility(item.item.pokemon)">
                                 {{ 'mdi-' + (item.isExpanded ? 'chevron-up' : 'chevron-down') }}
                             </v-icon>
                         </template>
                     </template>
-                    <ball-img v-else-if="item.item.ballSet[header.value]" :kind="header.value"></ball-img>
+                    <ball-img
+                        :style="`filter: grayscale(${item.item.hiddenAbility[header.value]?0:0.8});`"
+                        v-else-if="item.item.ballSet[header.value]"
+                        :kind="header.value"
+                    ></ball-img>
                 </td>
             </tr>
         </template>
@@ -333,8 +354,18 @@ export default class PokemonTable extends Vue {
 
     private tdClicked(header: DataTableHeader, item: any) {
         if("expand" in item) {
-            if (this.isBall(header.value)) item.item.ballSet[header.value] = !item.item.ballSet[header.value];
             if (header.value === 'ability' && this.haveHiddenAbility(item.item.pokemon)) item.expand(!item.isExpanded);
+            if (this.isBall(header.value)) {
+                function haveAnyHiddenAbility(ha: BallSet) {
+                    for(const ball of Balls) if(ha[ball]) return true;
+                    return false;
+                }
+                // TODO: ここに快適になるような処理をいれる
+                // ball ni check
+                item.item.ballSet[header.value] = !item.item.ballSet[header.value];
+                // yume tokusei wo motte iruka?
+                if(!this.haveHiddenAbility(item.item.pokemon)) item.item.hiddenAbility[header.value] = item.item.ballSet[header.value];
+            }
         } else { //expanded rows
             if(this.isBall(header.value) && item.ballSet[header.value]) {
                 if(item.needAllBall === 3) {
