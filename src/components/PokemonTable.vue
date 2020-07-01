@@ -185,6 +185,8 @@ interface BallSet {
     lure: boolean;
     dream: boolean;
     beast: boolean;
+    sport: boolean;
+    safari: boolean;
     [key: string]: boolean;
 
 }
@@ -208,6 +210,8 @@ const Balls: Array<keyof BallSet> = [
     'lure',
     'dream',
     'beast',
+    'sport',
+    'safari',
 ];
 
 @Component({
@@ -239,6 +243,8 @@ export default class PokemonTable extends Vue {
         {text: 'ルアーボール', value: 'lure'},
         {text: 'ドリームボール', value: 'dream'},
         {text: 'ウルトラボール', value: 'beast'},
+        {text: 'コンペボール', value: 'sport'},
+        {text: 'サファリボール', value: 'safari'},
     ];
     private prettyfilter(text: string, queryText: string): boolean {
         //console.log("text, queryText", text, queryText);
@@ -299,6 +305,8 @@ export default class PokemonTable extends Vue {
                 lure: false,
                 dream: false,
                 beast: false,
+                sport: false,
+                safari: false,
             },
             needAllBall: 3,
             ballSet: {
@@ -311,6 +319,8 @@ export default class PokemonTable extends Vue {
                 lure: false,
                 dream: false,
                 beast: false,
+                sport: false,
+                safari: false,
             },
         };
     }
