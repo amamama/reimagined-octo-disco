@@ -73,28 +73,37 @@
                     v-for="header of headers"
                     :key="header.value"
                     :class="`${header.value} px-2`"
-                    @click="isBall(header.value)?inclBall(newFace.ballSet, header.value):undefined"
+                    @click="tdClicked(header, newFace.ballSet)"
                 >
-                    <v-autocomplete
-                        v-if="header.value == 'pokemon'"
-                        :items="pokemonList"
-                        :filter="(item, queryText, itemText) => (prettyfilter(itemText, queryText))"
-                        item-text="pokemon.name"
-                        return-object
-                        autofocus
-                        @input="updateNewFace"
-                    ></v-autocomplete>
-                    <template v-else-if="header.value === 'ability'">
-                        {{ newFace.pokemon === '' ? '' : getHiddenAbility(newFace.pokemon) }}
-                        <v-icon v-if="false">
-                            ここに隠れ特性を持っており隠れ特性の所持の考慮が必要ないポケモンの場合
-                            （ 両性が存在し少なくとも１つのオシャボで隠れ特性を所持している場合）
-                            は○か✓を出す．
-                            遺伝で増やせないが夢特性を持っている場合は△，
-                            全く持っていない場合は☓を出す
-                        </v-icon>
+                    <template v-if="!isBall(header.value)">
+                        <template v-if="header.value === 'pokemonId'">
+                        </template>
+                        <template v-else-if="header.value === 'pokemon'">
+                            <v-autocomplete
+                                    :items="pokemonList"
+                                    :filter="(item, queryText, itemText) => (prettyfilter(itemText, queryText))"
+                                    item-text="pokemon.name"
+                                    return-object
+                                    autofocus
+                                    @input="updateNewFace"
+                            ></v-autocomplete>
+                        </template>
+                        <template v-else-if="header.value === 'ability'">
+                            {{ newFace.pokemon === '' ? '' : getHiddenAbility(newFace.pokemon) }}
+                            <v-icon v-if="false">
+                                ここに隠れ特性を持っており隠れ特性の所持の考慮が必要ないポケモンの場合
+                                （ 両性が存在し少なくとも１つのオシャボで隠れ特性を所持している場合）
+                                は○か✓を出す．
+                                遺伝で増やせないが夢特性を持っている場合は△，
+                                全く持っていない場合は☓を出す
+                            </v-icon>
+                        </template>
                     </template>
-                    <ball-img v-else-if="newFace.ballSet[header.value]" :kind="header.value"></ball-img>
+                    <ball-img
+                        :style="`filter: grayscale(${newFace.ballSet[header.value] == 2?0:0.8});`"
+                        v-else-if="newFace.ballSet[header.value] != 0"
+                        :kind="header.value">
+                    </ball-img>
                 </td>
             </tr>
         </template>
@@ -104,7 +113,7 @@
                     v-for="header of item.headers"
                     :key="header.value"
                     :class="header.value"
-                    @click="tdClicked(header, item)"
+                    @click="tdClicked(header, item.item.ballSet)"
                 >
                     <template v-if="!isBall(header.value)">
                         <template v-if="header.value === 'pokemonId'">
@@ -125,13 +134,10 @@
                                 遺伝で増やせないが夢特性を持っている場合は△，
                                 全く持っていない場合は☓を出す
                             </v-icon>
-                            <v-icon v-else-if="haveHiddenAbility(item.item.pokemon)">
-                                {{ 'mdi-' + (item.isExpanded ? 'chevron-up' : 'chevron-down') }}
-                            </v-icon>
                         </template>
                     </template>
                     <ball-img
-                        :style="`filter: grayscale(${item.item.ballSet[header.value] != 2?0:0.8});`"
+                        :style="`filter: grayscale(${item.item.ballSet[header.value] == 2?0:0.8});`"
                         v-else-if="item.item.ballSet[header.value] != 0"
                         :kind="header.value"
                     ></ball-img>
@@ -300,7 +306,6 @@ export default class PokemonTable extends Vue {
             if(n) this.newFace.pokemonId = n;
             if(tane) this.newFace.needAllBall = tane.needAllBall;
         }
-        this.text = JSON.stringify(this.newFace);
     }
     private resetRegisterState() {
         this.registering = false;
@@ -311,7 +316,6 @@ export default class PokemonTable extends Vue {
         this.items.splice(index, 1, this.newFace);
     }
     private registerPokemon() {
-        console.log(JSON.stringify(this.newFace));
         if(!this.pokemonList.find((p) => p.pokemon.name === this.newFace.pokemon)) return this.cancel();
         if(this.havePokemon(this.newFace.pokemon)) this.updatePokemon();
         else this.items.push(this.newFace);
@@ -332,7 +336,7 @@ export default class PokemonTable extends Vue {
         bs[k] = n == 0 ? 0 : n == 1 ? 1 : 2;
     }
 
-    private tdClicked(header: DataTableHeader, item: any) {
+    private tdClicked(header: DataTableHeader, bs: BallSet) {
         //if("expand" in item) {
             //if (header.value === 'ability' && this.haveHiddenAbility(item.item.pokemon)) item.expand(!item.isExpanded);
             if (this.isBall(header.value)) {
@@ -343,9 +347,9 @@ export default class PokemonTable extends Vue {
                 // TODO: ここに快適になるような処理をいれる
                 // expandではなく，tri-stateで管理できるはず
                 // ball ni check
-                this.inclBall(item.item.ballSet, header.value);
-                if(item.item.ballSet[header.value] == 1 && haveAnyHiddenAbility(item.item.ballSet)) {
-                    this.inclBall(item.item.ballSet, header.value);
+                this.inclBall(bs, header.value);
+                if(bs[header.value] == 1 && haveAnyHiddenAbility(bs)) {
+                    this.inclBall(bs, header.value);
                 }
                 // yume tokusei wo motte iruka?
                 // if(!this.haveHiddenAbility(item.item.pokemon)) item.item.hiddenAbility[header.value] = item.item.ballSet[header.value];
