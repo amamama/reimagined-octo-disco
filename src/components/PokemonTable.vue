@@ -73,7 +73,7 @@
                     v-for="header of headers"
                     :key="header.value"
                     :class="`${header.value} px-2`"
-                    @click="isBall(header.value) && (newFace.ballSet[header.value] = !newFace.ballSet[header.value])"
+                    @click="isBall(header.value)?inclBall(newFace.ballSet, header.value):undefined"
                 >
                     <v-autocomplete
                         v-if="header.value == 'pokemon'"
@@ -131,31 +131,10 @@
                         </template>
                     </template>
                     <ball-img
-                        :style="`filter: grayscale(${item.item.hiddenAbility[header.value]?0:0.8});`"
-                        v-else-if="item.item.ballSet[header.value]"
+                        :style="`filter: grayscale(${item.item.ballSet[header.value] != 2?0:0.8});`"
+                        v-else-if="item.item.ballSet[header.value] != 0"
                         :kind="header.value"
                     ></ball-img>
-                </td>
-            </tr>
-        </template>
-        <template v-slot:expanded-item="{item, headers}">
-            <tr>
-                <td
-                    v-for="header of headers"
-                    :key="header.value"
-                    :class="header.value"
-                    @click="tdClicked(header, item)"
-                >
-                    <template v-if="!isBall(header.value)">
-                        <template v-if="header.value === 'pokemonId'">
-                        </template>
-                        <template v-else-if="header.value === 'pokemon'">
-                        </template>
-                        <template v-else-if="header.value === 'ability'">
-                            {{ getHiddenAbility(item.pokemon) }}
-                        </template>
-                    </template>
-                    <ball-img v-else-if="item.hiddenAbility[header.value]" :kind="header.value"></ball-img>
                 </td>
             </tr>
         </template>
@@ -176,29 +155,26 @@ import Number64 from '@/util/Number64';
 import HiraKataConverter from '@/util/HiraKataConverter';
 
 interface BallSet {
-    love: boolean;
-    moon: boolean;
-    heavy: boolean;
-    level: boolean;
-    friend: boolean;
-    fast: boolean;
-    lure: boolean;
-    dream: boolean;
-    beast: boolean;
-    sport: boolean;
-    safari: boolean;
-    [key: string]: boolean;
-
+    love: 0 | 1 | 2;
+    moon: 0 | 1 | 2;
+    heavy: 0 | 1 | 2;
+    level: 0 | 1 | 2;
+    friend: 0 | 1 | 2;
+    fast: 0 | 1 | 2;
+    lure: 0 | 1 | 2;
+    dream: 0 | 1 | 2;
+    beast: 0 | 1 | 2;
+    sport: 0 | 1 | 2;
+    safari: 0 | 1 | 2;
+    [key: string]: 0 | 1 | 2;
 }
 
 interface PokemonTableElement {
-    pokemonId: number;
+    pokemonId: string;
     pokemon: string;
-    hiddenAbility: BallSet;
     ballSet: BallSet;
     needAllBall: number; // 0 | 1 | 2 | 3; // 性別不明 | オスのみ | メスのみ | 両方
 }
-
 
 const Balls: Array<keyof BallSet> = [
     'love',
@@ -220,10 +196,10 @@ const Balls: Array<keyof BallSet> = [
     },
 })
 export default class PokemonTable extends Vue {
-    private text: string = '';
+    private text: string = 'text';
     private debug: string = '';
     private tanepokemonList = tanepokemonList;
-    private pokemonList = pokemonList.filter((p) => this.tanepokemonList.some((q) => q.pokemon === p.pokemon.name.split('\n')[0]));
+    private pokemonList = pokemonList.filter((p) => this.tanepokemonList.some((q) => q.pokemon === p.pokemon.name));
     private sortBy: string[] = ['pokemon'];
     private sortDesc: boolean[] = [false];
     private search: string = '';
@@ -231,7 +207,7 @@ export default class PokemonTable extends Vue {
     private newFace: PokemonTableElement = this.resetPokemonTableElement();
     private items: PokemonTableElement[] = [];
     private headers: DataTableHeader[] = [
-        {text: 'No', value: 'pokemonId', sort: (a, b) => a - b},
+        {text: 'No', value: 'pokemonId', sort: (a, b) => a - b}, // TODO: henkou
         {text: 'ポケモン', value: 'pokemon'},
         {text: '隠れ特性', value: 'ability'},
         {text: 'ラブラブボール', value: 'love'},
@@ -247,9 +223,7 @@ export default class PokemonTable extends Vue {
         {text: 'サファリボール', value: 'safari'},
     ];
     private prettyfilter(text: string, queryText: string): boolean {
-        //console.log("text, queryText", text, queryText);
         const hira: string = HiraKataConverter.romahira(queryText);
-        //console.log("hira", hira);
         return text.includes(HiraKataConverter.hirakata(hira));
     }
     private manageSortBy(str: string) {
@@ -277,7 +251,8 @@ export default class PokemonTable extends Vue {
     }
     private isBall(str: string): boolean {
         return Balls.includes(str);
-    }
+   }
+
     private findPokemon(name: string) {
         const pokemon = this.pokemonList.find((p) => p.pokemon.name === name);
         if(!pokemon) throw new Error(`nanka okasii :${name}: `);
@@ -293,50 +268,39 @@ export default class PokemonTable extends Vue {
     }
     private resetPokemonTableElement(): PokemonTableElement {
         return {
-            pokemonId: 0,
+            pokemonId: '',
             pokemon: '',
-            hiddenAbility: {
-                love: false,
-                moon: false,
-                heavy: false,
-                level: false,
-                friend: false,
-                fast: false,
-                lure: false,
-                dream: false,
-                beast: false,
-                sport: false,
-                safari: false,
-            },
             needAllBall: 3,
             ballSet: {
-                love: false,
-                moon: false,
-                heavy: false,
-                level: false,
-                friend: false,
-                fast: false,
-                lure: false,
-                dream: false,
-                beast: false,
-                sport: false,
-                safari: false,
+                love: 0,
+                moon: 0,
+                heavy: 0,
+                level: 0,
+                friend: 0,
+                fast: 0,
+                lure: 0,
+                dream: 0,
+                beast: 0,
+                sport: 0,
+                safari: 0,
             },
         };
     }
     private havePokemon(name: string): PokemonTableElement | undefined {
         return this.items.find((item) => item.pokemon === name);
     }
-    private updateNewFace(p: any) {
+    private updateNewFace(p: {pokemon: {name: string; cls: string[];}}) {
         const oldFace = this.havePokemon(p.pokemon.name);
         if(oldFace) {
             this.newFace = JSON.parse(JSON.stringify(oldFace));
         } else {
             const tane = this.tanepokemonList.find((t) => (t.pokemon === p.pokemon.name));
             this.newFace.pokemon = p.pokemon.name;
-            this.newFace.pokemonId = p.number;
+            const n = p.pokemon.cls.find(s => s.startsWith('n'));
+            if(n) this.newFace.pokemonId = n;
             if(tane) this.newFace.needAllBall = tane.needAllBall;
         }
+        this.text = JSON.stringify(this.newFace);
     }
     private resetRegisterState() {
         this.registering = false;
@@ -347,10 +311,11 @@ export default class PokemonTable extends Vue {
         this.items.splice(index, 1, this.newFace);
     }
     private registerPokemon() {
+        console.log(JSON.stringify(this.newFace));
         if(!this.pokemonList.find((p) => p.pokemon.name === this.newFace.pokemon)) return this.cancel();
         if(this.havePokemon(this.newFace.pokemon)) this.updatePokemon();
         else this.items.push(this.newFace);
-        this.exportItems();
+        //this.exportItems();
         this.resetRegisterState();
     }
     private cancel() {
@@ -358,25 +323,34 @@ export default class PokemonTable extends Vue {
     }
 
     private copyLink() {
-        this.exportItems();
-        navigator.clipboard.writeText(`${location.protocol}//${location.host}${location.pathname}#/?table=${this.debug}`);
+        // this.exportItems();
+        // navigator.clipboard.writeText(`${location.protocol}//${location.host}${location.pathname}#/?table=${this.debug}`);
+    }
+
+    private  inclBall(bs: BallSet, k : keyof BallSet) {
+        const n = (bs[k] + 1) % 3;
+        bs[k] = n == 0 ? 0 : n == 1 ? 1 : 2;
     }
 
     private tdClicked(header: DataTableHeader, item: any) {
-        if("expand" in item) {
-            if (header.value === 'ability' && this.haveHiddenAbility(item.item.pokemon)) item.expand(!item.isExpanded);
+        //if("expand" in item) {
+            //if (header.value === 'ability' && this.haveHiddenAbility(item.item.pokemon)) item.expand(!item.isExpanded);
             if (this.isBall(header.value)) {
                 function haveAnyHiddenAbility(ha: BallSet) {
-                    for(const ball of Balls) if(ha[ball]) return true;
+                    for(const ball of Balls) if(ha[ball] == 2) return true;
                     return false;
                 }
                 // TODO: ここに快適になるような処理をいれる
+                // expandではなく，tri-stateで管理できるはず
                 // ball ni check
-                item.item.ballSet[header.value] = !item.item.ballSet[header.value];
+                this.inclBall(item.item.ballSet, header.value);
+                if(item.item.ballSet[header.value] == 1 && haveAnyHiddenAbility(item.item.ballSet)) {
+                    this.inclBall(item.item.ballSet, header.value);
+                }
                 // yume tokusei wo motte iruka?
-                if(!this.haveHiddenAbility(item.item.pokemon)) item.item.hiddenAbility[header.value] = item.item.ballSet[header.value];
+                // if(!this.haveHiddenAbility(item.item.pokemon)) item.item.hiddenAbility[header.value] = item.item.ballSet[header.value];
             }
-        } else { //expanded rows
+        /*} else { //expanded rows
             if(this.isBall(header.value) && item.ballSet[header.value]) {
                 if(item.needAllBall === 3) {
                     for(const ball of Balls) {
@@ -386,9 +360,9 @@ export default class PokemonTable extends Vue {
                     item.hiddenAbility[header.value] = true;
                 }
             }
-        }
+        }*/
     }
-
+    /*
     private exportItems() {
         function encodeBallAndAbility(item: PokemonTableElement): number {
             function toD3(prop: boolean, i: number, arr: BallSet): number {
@@ -416,7 +390,7 @@ export default class PokemonTable extends Vue {
         this.items = decodedArr.map((n) => {
             const ret: PokemonTableElement = this.resetPokemonTableElement();
             const num = Math.floor(n / 65536) % 512;
-            const pokemon = this.pokemonList.find((p) => p.number === num);
+            const pokemon = this.pokemonList.find((p) => p.pokemon.cls[1].slice(1) === num.toString());
             if(!pokemon) throw new Error(`import dekinai ${num}`);
             const name = pokemon.pokemon.name;
             const tp = this.tanepokemonList.find((t) => t.pokemon === name.split('\n')[0]);
@@ -443,6 +417,7 @@ export default class PokemonTable extends Vue {
         const encodedFromQuery: string = this.$route.query.table;
         this.importItems(encodedFromQuery);
     }
+     */
 }
 </script>
 
