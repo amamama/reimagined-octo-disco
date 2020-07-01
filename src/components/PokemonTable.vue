@@ -425,7 +425,7 @@ export default class PokemonTable extends Vue {
             ret.pokemonId = num;
             ret.pokemon = name;
             ret.needAllBall = tp.needAllBall;
-            for(let i = Balls.length - 1; i >= 0; i--) {
+            for(let i = Balls.length - 1 - 2; i >= 0; i--) {
                 const d = n % 3;
                 ret.hiddenAbility[Balls[i]] = d === 2;
                 ret.ballSet[Balls[i]] = d > 0;
