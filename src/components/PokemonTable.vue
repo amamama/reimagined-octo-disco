@@ -460,8 +460,10 @@ export default class PokemonTable extends Vue {
     .lure { background-color: rgba(225, 236, 255, 1); }
     .dream { background-color: rgba(255, 216, 255, 1); }
     .beast { background-color: rgba(216, 225, 255, 1); }
+    .sport { background-color: rgba(255, 216, 216, 1); }
+    .safari { background-color: rgba(216, 225, 216, 1); }
 
-    .love, .moon, .heavy, .level, .friend, .fast, .lure, .dream, .beast {
+    .love, .moon, .heavy, .level, .friend, .fast, .lure, .dream, .beast, .sport, .safari {
         max-width: 80px;
         width: 80px;
     }
