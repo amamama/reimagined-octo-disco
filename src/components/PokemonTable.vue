@@ -73,7 +73,7 @@
                     v-for="header of headers"
                     :key="header.value"
                     :class="`${header.value} px-2`"
-                    @click="tdClicked(header, newFace.ballSet)"
+                    @click="tdClicked(header, newFace.ballSet, newFace.pokemon)"
                 >
                     <template v-if="!isBall(header.value)">
                         <template v-if="header.value === 'pokemonId'">
@@ -113,7 +113,7 @@
                     v-for="header of item.headers"
                     :key="header.value"
                     :class="header.value"
-                    @click="tdClicked(header, item.item.ballSet)"
+                    @click="tdClicked(header, item.item.ballSet, item.item.pokemon)"
                 >
                     <template v-if="!isBall(header.value)">
                         <template v-if="header.value === 'pokemonId'">
@@ -202,7 +202,7 @@ const Balls: Array<keyof BallSet> = [
     },
 })
 export default class PokemonTable extends Vue {
-    private text: string = 'text';
+    private text: string = '';
     private debug: string = '';
     private tanepokemonList = tanepokemonList;
     private pokemonList = pokemonList.filter((p) => this.tanepokemonList.some((q) => q.pokemon === p.pokemon.name));
@@ -213,7 +213,7 @@ export default class PokemonTable extends Vue {
     private newFace: PokemonTableElement = this.resetPokemonTableElement();
     private items: PokemonTableElement[] = [];
     private headers: DataTableHeader[] = [
-        {text: 'No', value: 'pokemonId', sort: (a, b) => a - b}, // TODO: henkou
+        {text: 'No', value: 'pokemonId'},
         {text: 'ポケモン', value: 'pokemon'},
         {text: '隠れ特性', value: 'ability'},
         {text: 'ラブラブボール', value: 'love'},
@@ -261,16 +261,18 @@ export default class PokemonTable extends Vue {
 
     private findPokemon(name: string) {
         const pokemon = this.pokemonList.find((p) => p.pokemon.name === name);
-        if(!pokemon) throw new Error(`nanka okasii :${name}: `);
         return pokemon;
     }
     private getHiddenAbility(name: string): string {
         const pokemon = this.findPokemon(name);
+        if(!pokemon) return 'pokemon not found';
         if(pokemon.abilities.hiddenAbility.length === 0) return '---';
         return pokemon.abilities.hiddenAbility[0];
     }
     private haveHiddenAbility(name: string) {
-        return this.findPokemon(name).abilities.hiddenAbility.length > 0;
+        const p = this.findPokemon(name);
+        if(!p) return false;
+        return p.abilities.hiddenAbility.length > 0;
     }
     private resetPokemonTableElement(): PokemonTableElement {
         return {
@@ -336,35 +338,17 @@ export default class PokemonTable extends Vue {
         bs[k] = n == 0 ? 0 : n == 1 ? 1 : 2;
     }
 
-    private tdClicked(header: DataTableHeader, bs: BallSet) {
-        //if("expand" in item) {
-            //if (header.value === 'ability' && this.haveHiddenAbility(item.item.pokemon)) item.expand(!item.isExpanded);
-            if (this.isBall(header.value)) {
-                function haveAnyHiddenAbility(ha: BallSet) {
-                    for(const ball of Balls) if(ha[ball] == 2) return true;
-                    return false;
-                }
-                // TODO: ここに快適になるような処理をいれる
-                // expandではなく，tri-stateで管理できるはず
-                // ball ni check
+    private tdClicked(header: DataTableHeader, bs: BallSet, name: string) {
+        if (this.isBall(header.value)) {
+            function haveAnyHiddenAbility(ha: BallSet) {
+                for(const ball of Balls) if(ha[ball] == 2) return true;
+                return false;
+            }
+            this.inclBall(bs, header.value);
+            if(bs[header.value] == 1 && (haveAnyHiddenAbility(bs) || !this.haveHiddenAbility(name))) {
                 this.inclBall(bs, header.value);
-                if(bs[header.value] == 1 && haveAnyHiddenAbility(bs)) {
-                    this.inclBall(bs, header.value);
-                }
-                // yume tokusei wo motte iruka?
-                // if(!this.haveHiddenAbility(item.item.pokemon)) item.item.hiddenAbility[header.value] = item.item.ballSet[header.value];
             }
-        /*} else { //expanded rows
-            if(this.isBall(header.value) && item.ballSet[header.value]) {
-                if(item.needAllBall === 3) {
-                    for(const ball of Balls) {
-                        if(item.ballSet[ball]) item.hiddenAbility[ball] = true;
-                    }
-                } else {
-                    item.hiddenAbility[header.value] = true;
-                }
-            }
-        }*/
+        }
     }
     /*
     private exportItems() {
