@@ -174,6 +174,17 @@ interface BallSet {
     safari: 0 | 1 | 2;
     [key: string]: 0 | 1 | 2;
 }
+interface Pokemon {
+    pokemon: {
+        name: string;
+        cls: string[];
+    };
+    abilities: {
+        normalAbility: string[];
+        hiddenAbility: string[];
+    };
+    types: string[];
+}
 
 interface PokemonTableElement {
     pokemonId: string;
@@ -205,7 +216,7 @@ export default class PokemonTable extends Vue {
     private text: string = '';
     private debug: string = '';
     private tanepokemonList = tanepokemonList;
-    private pokemonList = pokemonList.filter((p) => this.tanepokemonList.some((q) => q.pokemon === p.pokemon.name));
+    private pokemonList: Pokemon[] = pokemonList.filter((p) => this.tanepokemonList.some((q) => q.pokemon === p.pokemon.name));
     private sortBy: string[] = ['pokemon'];
     private sortDesc: boolean[] = [false];
     private search: string = '';
@@ -297,7 +308,7 @@ export default class PokemonTable extends Vue {
     private havePokemon(name: string): PokemonTableElement | undefined {
         return this.items.find((item) => item.pokemon === name);
     }
-    private updateNewFace(p: {pokemon: {name: string; cls: string[];}}) {
+    private updateNewFace(p: Pokemon) {
         const oldFace = this.havePokemon(p.pokemon.name);
         if(oldFace) {
             this.newFace = JSON.parse(JSON.stringify(oldFace));
