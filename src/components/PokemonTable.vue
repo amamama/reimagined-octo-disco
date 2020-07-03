@@ -227,17 +227,17 @@ export default class PokemonTable extends Vue {
         {text: 'No', value: 'pokemonId'},
         {text: 'ポケモン', value: 'pokemon'},
         {text: '隠れ特性', value: 'ability'},
-        {text: 'ラブラブボール', value: 'love'},
-        {text: 'ムーンボール', value: 'moon'},
-        {text: 'ヘビーボール', value: 'heavy'},
-        {text: 'レベルボール', value: 'level'},
-        {text: 'フレンドボール', value: 'friend'},
-        {text: 'スピードボール', value: 'fast'},
-        {text: 'ルアーボール', value: 'lure'},
-        {text: 'ドリームボール', value: 'dream'},
-        {text: 'ウルトラボール', value: 'beast'},
-        {text: 'コンペボール', value: 'sport'},
-        {text: 'サファリボール', value: 'safari'},
+        {text: 'ラブラブボール', value: 'love', },
+        {text: 'ムーンボール', value: 'moon', },
+        {text: 'ヘビーボール', value: 'heavy', },
+        {text: 'レベルボール', value: 'level', },
+        {text: 'フレンドボール', value: 'friend', },
+        {text: 'スピードボール', value: 'fast', },
+        {text: 'ルアーボール', value: 'lure', },
+        {text: 'ドリームボール', value: 'dream', },
+        {text: 'ウルトラボール', value: 'beast', },
+        {text: 'コンペボール', value: 'sport', },
+        {text: 'サファリボール', value: 'safari', },
     ];
     private prettyfilter(text: string, queryText: string): boolean {
         const hira: string = HiraKataConverter.romahira(queryText);
@@ -344,19 +344,19 @@ export default class PokemonTable extends Vue {
         // navigator.clipboard.writeText(`${location.protocol}//${location.host}${location.pathname}#/?table=${this.debug}`);
     }
 
-    private  inclBall(bs: BallSet, k : keyof BallSet) {
+    private  inclBall(bs: BallSet, k: keyof BallSet) {
         const n = (bs[k] + 1) % 3;
-        bs[k] = n == 0 ? 0 : n == 1 ? 1 : 2;
+        bs[k] = n === 0 ? 0 : n === 1 ? 1 : 2;
     }
 
     private tdClicked(header: DataTableHeader, bs: BallSet, name: string) {
         if (this.isBall(header.value)) {
             function haveAnyHiddenAbility(ha: BallSet) {
-                for(const ball of Balls) if(ha[ball] == 2) return true;
+                for(const ball of Balls) if(ha[ball] === 2) return true;
                 return false;
             }
             this.inclBall(bs, header.value);
-            if(bs[header.value] == 1 && (haveAnyHiddenAbility(bs) || !this.haveHiddenAbility(name))) {
+            if(bs[header.value] === 1 && (haveAnyHiddenAbility(bs) || !this.haveHiddenAbility(name))) {
                 this.inclBall(bs, header.value);
             }
         }
