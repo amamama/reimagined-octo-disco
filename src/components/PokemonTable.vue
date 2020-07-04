@@ -100,8 +100,8 @@
                         </template>
                     </template>
                     <ball-img
-                        :style="`filter: grayscale(${newFace.ballSet[header.value] == 2?0:0.8});`"
-                        v-else-if="newFace.ballSet[header.value] != 0"
+                        :style="`filter: grayscale(${newFace.ballSet[header.value] === 2?0:0.8});`"
+                        v-else-if="newFace.ballSet[header.value] !== 0"
                         :kind="header.value">
                     </ball-img>
                 </td>
@@ -137,8 +137,8 @@
                         </template>
                     </template>
                     <ball-img
-                        :style="`filter: grayscale(${item.item.ballSet[header.value] == 2?0:0.8});`"
-                        v-else-if="item.item.ballSet[header.value] != 0"
+                        :style="`filter: grayscale(${item.item.ballSet[header.value] === 2?0:0.8});`"
+                        v-else-if="item.item.ballSet[header.value] !== 0"
                         :kind="header.value"
                     ></ball-img>
                 </td>
@@ -160,7 +160,8 @@ import tanepokemonList from '@/assets/q.json';
 import Number64 from '@/util/Number64';
 import HiraKataConverter from '@/util/HiraKataConverter';
 
-interface BallSet {
+type BallType = 'love' | 'moon' | 'heavy' | 'level' | 'friend' | 'fast' | 'lure' | 'dream' | 'beast' | 'sport' | 'safari';
+/*interface BallSet {
     love: 0 | 1 | 2;
     moon: 0 | 1 | 2;
     heavy: 0 | 1 | 2;
@@ -173,7 +174,8 @@ interface BallSet {
     sport: 0 | 1 | 2;
     safari: 0 | 1 | 2;
     [key: string]: 0 | 1 | 2;
-}
+}*/
+type BallSet = {[key in BallType]: 0 | 1 | 2 };
 interface Pokemon {
     pokemon: {
         name: string;
@@ -227,17 +229,17 @@ export default class PokemonTable extends Vue {
         {text: 'No', value: 'pokemonId'},
         {text: 'ポケモン', value: 'pokemon'},
         {text: '隠れ特性', value: 'ability'},
-        {text: 'ラブラブボール', value: 'love', },
-        {text: 'ムーンボール', value: 'moon', },
-        {text: 'ヘビーボール', value: 'heavy', },
-        {text: 'レベルボール', value: 'level', },
-        {text: 'フレンドボール', value: 'friend', },
-        {text: 'スピードボール', value: 'fast', },
-        {text: 'ルアーボール', value: 'lure', },
-        {text: 'ドリームボール', value: 'dream', },
-        {text: 'ウルトラボール', value: 'beast', },
-        {text: 'コンペボール', value: 'sport', },
-        {text: 'サファリボール', value: 'safari', },
+        {text: 'ラブラブボール', value: 'love'},
+        {text: 'ムーンボール', value: 'moon'},
+        {text: 'ヘビーボール', value: 'heavy'},
+        {text: 'レベルボール', value: 'level'},
+        {text: 'フレンドボール', value: 'friend'},
+        {text: 'スピードボール', value: 'fast'},
+        {text: 'ルアーボール', value: 'lure'},
+        {text: 'ドリームボール', value: 'dream'},
+        {text: 'ウルトラボール', value: 'beast'},
+        {text: 'コンペボール', value: 'sport'},
+        {text: 'サファリボール', value: 'safari'},
     ];
     private prettyfilter(text: string, queryText: string): boolean {
         const hira: string = HiraKataConverter.romahira(queryText);
@@ -266,8 +268,8 @@ export default class PokemonTable extends Vue {
         if(index < 0) throw new Error(`sort saretenai ${str}`);
         return this.sortDesc[index];
     }
-    private isBall(str: string): boolean {
-        return Balls.includes(str);
+    private isBall(str: string): str is BallType {
+        return (Balls as Array<string>).includes(str);
    }
 
     private findPokemon(name: string) {
@@ -308,16 +310,24 @@ export default class PokemonTable extends Vue {
     private havePokemon(name: string): PokemonTableElement | undefined {
         return this.items.find((item) => item.pokemon === name);
     }
+    private getTanePokemon(p: Pokemon) {
+        const tane = this.tanepokemonList.find((t) => (t.pokemon === p.pokemon.name));
+        if(!tane) throw new Error('tane pokemon ja nai');
+        return tane;
+    }
+    private getPokemonId(p: Pokemon): string {
+        const n = p.pokemon.cls.find((s) => s.startsWith('n'));
+        if(!n) throw new Error('なんかおかしい');
+        return n;
+    }
     private updateNewFace(p: Pokemon) {
         const oldFace = this.havePokemon(p.pokemon.name);
         if(oldFace) {
             this.newFace = JSON.parse(JSON.stringify(oldFace));
         } else {
-            const tane = this.tanepokemonList.find((t) => (t.pokemon === p.pokemon.name));
             this.newFace.pokemon = p.pokemon.name;
-            const n = p.pokemon.cls.find(s => s.startsWith('n'));
-            if(n) this.newFace.pokemonId = n;
-            if(tane) this.newFace.needAllBall = tane.needAllBall;
+            this.newFace.pokemonId = this.getPokemonId(p);
+            this.newFace.needAllBall = this.getTanePokemon(p).needAllBall;
         }
     }
     private resetRegisterState() {
@@ -332,7 +342,7 @@ export default class PokemonTable extends Vue {
         if(!this.pokemonList.find((p) => p.pokemon.name === this.newFace.pokemon)) return this.cancel();
         if(this.havePokemon(this.newFace.pokemon)) this.updatePokemon();
         else this.items.push(this.newFace);
-        //this.exportItems();
+        this.exportItems();
         this.resetRegisterState();
     }
     private cancel() {
@@ -340,8 +350,8 @@ export default class PokemonTable extends Vue {
     }
 
     private copyLink() {
-        // this.exportItems();
-        // navigator.clipboard.writeText(`${location.protocol}//${location.host}${location.pathname}#/?table=${this.debug}`);
+        this.exportItems();
+        navigator.clipboard.writeText(`${location.protocol}//${location.host}${location.pathname}#/?table=${this.debug}`);
     }
 
     private  inclBall(bs: BallSet, k: keyof BallSet) {
@@ -350,73 +360,74 @@ export default class PokemonTable extends Vue {
     }
 
     private tdClicked(header: DataTableHeader, bs: BallSet, name: string) {
-        if (this.isBall(header.value)) {
-            function haveAnyHiddenAbility(ha: BallSet) {
-                for(const ball of Balls) if(ha[ball] === 2) return true;
-                return false;
-            }
+        if (!this.isBall(header.value)) return;
+        function haveAnyHiddenAbility(ha: BallSet) {
+            for(const ball of Balls) if(ha[ball] === 2) return true;
+            return false;
+        }
+        this.inclBall(bs, header.value);
+        if(bs[header.value] === 1 && (haveAnyHiddenAbility(bs) || !this.haveHiddenAbility(name))) {
             this.inclBall(bs, header.value);
-            if(bs[header.value] === 1 && (haveAnyHiddenAbility(bs) || !this.haveHiddenAbility(name))) {
-                this.inclBall(bs, header.value);
-            }
         }
+        // needAllBallを用いて便利にする
+
     }
-    /*
+
     private exportItems() {
-        function encodeBallAndAbility(item: PokemonTableElement): number {
-            function toD3(prop: boolean, i: number, arr: BallSet): number {
-                return prop ? arr[Balls[i]] ? 2 : 1 : 0;
-            }
-            return (Balls
-                .map((b, i) => toD3(item.ballSet[b], i, item.hiddenAbility))
-                .reduce(((a, v) => a * 3 + v), 0));
+        function encodeBallSet(bs: BallSet): number {
+            // 0 <= ret < 3^11
+            return (Balls.map((b, i, a) => bs[a[i]]).reduce(((a: number, v) => a * 3 + v), 0));
         }
-        const d = this.items.map(
-            (item) =>
-                (item.needAllBall * 512 + item.pokemonId) * 65536 + encodeBallAndAbility(item));
-        const encoded = d.map((n) => (new Number64(n)).toString().padStart(5, 'A')).join('');
+        const fuckThis = this.getPokemonId;
+        function encodePokemonId(pid: string) {
+            // 1 <= ret < 2^13
+            const id = pid.replace(/[a-z]/g, '');
+            // 1 <= id < 1000 < 2^10
+            const idx = pokemonList.filter((p) => fuckThis(p).startsWith('n' + id)).findIndex((p) => fuckThis(p) === pid);
+            // 0 < idx < 2^3
+            if(idx < 0) throw new Error('hai zako');
+            return parseInt(id, 10) * 8 + idx;
+        }
+        const d = this.items.map((item) => encodePokemonId(item.pokemonId) * 177147 + encodeBallSet(item.ballSet));
+        const encoded = d.map((n) => (new Number64(n)).toString().padStart(6, 'A')).join('');
         this.debug = encoded;
         console.log('length', encoded.length);
         localStorage.setItem('table', encoded);
     }
+
     private importItems(encoded: string) {
-        if(encoded.length % 5 !== 0) return;
-        const encodedArr: string[] = [];
-        for(; encoded.length > 0; encoded = encoded.slice(5)) {
-            encodedArr.push(encoded.slice(0, 5));
-        }
-        const decodedArr: number[] = encodedArr.map((s) => Number64.to(s));
-        this.items = decodedArr.map((n) => {
+        if(encoded.length % 6 !== 0) return;
+        const decodedArr = encoded.replace(/.{6}(?!$)/g, '$&,').split(',').map((s) => Number64.to(s));
+        this.items = decodedArr.map((n: number) => {
             const ret: PokemonTableElement = this.resetPokemonTableElement();
-            const num = Math.floor(n / 65536) % 512;
-            const pokemon = this.pokemonList.find((p) => p.pokemon.cls[1].slice(1) === num.toString());
-            if(!pokemon) throw new Error(`import dekinai ${num}`);
-            const name = pokemon.pokemon.name;
-            const tp = this.tanepokemonList.find((t) => t.pokemon === name.split('\n')[0]);
-            if(!tp) throw new Error(`tane pokemon dehanai ${name}`);
-            n %= 65536;
-            ret.pokemonId = num;
-            ret.pokemon = name;
+            const idAndForm = Math.floor(n / 177147);
+            const id = Math.floor(idAndForm / 8);
+            const form = idAndForm % 8;
+            const pokemon = this.pokemonList.filter((p) => this.getPokemonId(p).startsWith(`n${id}`))[form];
+            if(!pokemon) throw new Error(`import dekinai ${id}, ${form}`);
+            const tp = this.getTanePokemon(pokemon);
+            n %= 177147; // 3^11
+            ret.pokemon = pokemon.pokemon.name;
+            ret.pokemonId = this.getPokemonId(pokemon);
             ret.needAllBall = tp.needAllBall;
-            for(let i = Balls.length - 1 - 2; i >= 0; i--) {
-                const d = n % 3;
-                ret.hiddenAbility[Balls[i]] = d === 2;
-                ret.ballSet[Balls[i]] = d > 0;
-                n = Math.floor(n / 3);
-            }
+            Balls.reduceRight(((a: number, v, i) => {
+                const d = a % 3;
+                ret.ballSet[Balls[i]] = d === 0 ? 0 : d === 1 ? 1 : 2;
+                return Math.floor(a / 3);
+            }), n);
             return ret;
         });
     }
+
     private created() {
-        if(!this.$route.query.table || typeof(this.$route.query.table) !== 'string') {
+        if (!this.$route.query.table || typeof (this.$route.query.table) !== 'string') {
             const encodedFromLocalStorage = localStorage.getItem('table');
-            if(encodedFromLocalStorage) this.importItems(encodedFromLocalStorage);
+            if (encodedFromLocalStorage) this.importItems(encodedFromLocalStorage);
             return;
         }
         const encodedFromQuery: string = this.$route.query.table;
         this.importItems(encodedFromQuery);
     }
-     */
 }
 </script>
 
