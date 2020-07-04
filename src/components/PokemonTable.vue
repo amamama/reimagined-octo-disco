@@ -195,6 +195,27 @@ interface PokemonTableElement {
     needAllBall: number; // 0 | 1 | 2 | 3; // 性別不明 | オスのみ | メスのみ | 両方
 }
 
+function initPokemonTableElement(): PokemonTableElement {
+    return {
+        pokemonId: '',
+        pokemon: '',
+        needAllBall: 3,
+        ballSet: {
+            love: 0,
+            moon: 0,
+            heavy: 0,
+            level: 0,
+            friend: 0,
+            fast: 0,
+            lure: 0,
+            dream: 0,
+            beast: 0,
+            sport: 0,
+            safari: 0,
+        },
+    };
+}
+
 const Balls: Array<keyof BallSet> = [
     'love',
     'moon',
@@ -223,7 +244,7 @@ export default class PokemonTable extends Vue {
     private sortDesc: boolean[] = [false];
     private search: string = '';
     private registering: boolean = false;
-    private newFace: PokemonTableElement = this.resetPokemonTableElement();
+    private newFace: PokemonTableElement = initPokemonTableElement();
     private items: PokemonTableElement[] = [];
     private headers: DataTableHeader[] = [
         {text: 'No', value: 'pokemonId'},
@@ -251,7 +272,7 @@ export default class PokemonTable extends Vue {
         if(index < 0) {
             this.sortBy.push(path);
             this.sortDesc.push(false);
-        } else if(this.sortDesc[index] === false) {
+        } else if(!this.sortDesc[index]) {
             this.sortDesc.splice(index, 1, true);
         } else {
             this.sortBy.splice(index, 1);
@@ -259,9 +280,7 @@ export default class PokemonTable extends Vue {
         }
     }
     private isSorted(str: string): number {
-        const path: string = this.isBall(str) ? 'ballSet.' + str : str;
-        const index = this.sortBy.indexOf(path);
-        return index;
+        return this.sortBy.indexOf(this.isBall(str) ? 'ballSet.' + str : str);
     }
     private isDesc(str: string): boolean {
         const index = this.isSorted(str);
@@ -273,8 +292,7 @@ export default class PokemonTable extends Vue {
    }
 
     private findPokemon(name: string) {
-        const pokemon = this.pokemonList.find((p) => p.pokemon.name === name);
-        return pokemon;
+        return this.pokemonList.find((p) => p.pokemon.name === name);
     }
     private getHiddenAbility(name: string): string {
         const pokemon = this.findPokemon(name);
@@ -286,26 +304,6 @@ export default class PokemonTable extends Vue {
         const p = this.findPokemon(name);
         if(!p) return false;
         return p.abilities.hiddenAbility.length > 0;
-    }
-    private resetPokemonTableElement(): PokemonTableElement {
-        return {
-            pokemonId: '',
-            pokemon: '',
-            needAllBall: 3,
-            ballSet: {
-                love: 0,
-                moon: 0,
-                heavy: 0,
-                level: 0,
-                friend: 0,
-                fast: 0,
-                lure: 0,
-                dream: 0,
-                beast: 0,
-                sport: 0,
-                safari: 0,
-            },
-        };
     }
     private havePokemon(name: string): PokemonTableElement | undefined {
         return this.items.find((item) => item.pokemon === name);
@@ -332,7 +330,7 @@ export default class PokemonTable extends Vue {
     }
     private resetRegisterState() {
         this.registering = false;
-        this.newFace = this.resetPokemonTableElement();
+        this.newFace = initPokemonTableElement();
     }
     private updatePokemon() {
         const index: number = this.items.findIndex((p) => p.pokemon === this.newFace.pokemon);
@@ -399,7 +397,7 @@ export default class PokemonTable extends Vue {
         if(encoded.length % 6 !== 0) return;
         const decodedArr = encoded.replace(/.{6}(?!$)/g, '$&,').split(',').map((s) => Number64.to(s));
         this.items = decodedArr.map((n: number) => {
-            const ret: PokemonTableElement = this.resetPokemonTableElement();
+            const ret: PokemonTableElement = initPokemonTableElement();
             const idAndForm = Math.floor(n / 177147);
             const id = Math.floor(idAndForm / 8);
             const form = idAndForm % 8;
