@@ -18,7 +18,7 @@ export default class Number64 {
 
     private static cpAtoZ: number[] = (new Array(26)).fill(0x41).map((n, i) => n + i);
     private static cp0to9: number[] = (new Array(10)).fill(0x30).map((n, i) => n + i);
-    private static cphd: number[] = [0x2d, 0x2e]; //["-", "."]
+    private static cphd: number[] = [0x2d, 0x2e]; // ["-", "."]
     private static cpAtoDot: number[] =
         Number64.cpAtoZ
             .concat(Number64.cpAtoZ.map((cp) => cp + 0x20))
