@@ -367,7 +367,10 @@ export default class PokemonTable extends Vue {
         if(bs[header.value] === 1 && (haveAnyHiddenAbility(bs) || !this.haveHiddenAbility(name))) {
             this.inclBall(bs, header.value);
         }
-        // needAllBallを用いて便利にする
+        // TODO: needAllBallを用いて便利にする
+
+        // 上書き保存
+        this.exportItems();
 
     }
 
@@ -381,13 +384,13 @@ export default class PokemonTable extends Vue {
             // 1 <= ret < 2^13
             const id = pid.replace(/[a-z]/g, '');
             // 1 <= id < 1000 < 2^10
-            const idx = pokemonList.filter((p) => fuckThis(p).startsWith('n' + id)).findIndex((p) => fuckThis(p) === pid);
+            const idx = pokemonList.filter((p) => (new RegExp(`n${id}(\$|[a-z])`)).test(fuckThis(p))).findIndex((p) => fuckThis(p) === pid);
             // 0 < idx < 2^3
-            if(idx < 0) throw new Error('hai zako');
+            if(idx < 0 || idx > 7) throw new Error('hai zako');
             return parseInt(id, 10) * 8 + idx;
         }
         const d = this.items.map((item) => encodePokemonId(item.pokemonId) * 177147 + encodeBallSet(item.ballSet));
-        const encoded = d.map((n) => (new Number64(n)).toString().padStart(6, 'A')).join('');
+        const encoded = d.map((n) => n%177147===0?'':((new Number64(n)).toString().padStart(6, 'A'))).join('');
         this.debug = encoded;
         console.log('length', encoded.length);
         localStorage.setItem('table', encoded);
@@ -402,7 +405,7 @@ export default class PokemonTable extends Vue {
             const id = Math.floor(idAndForm / 8);
             const form = idAndForm % 8;
             const pokemon = this.pokemonList.filter((p) => (new RegExp(`n${id}(\$|[a-z])`)).test(this.getPokemonId(p)))[form];
-            if(!pokemon) throw new Error(`import dekinai ${id}, ${form}`);
+            if(!pokemon) throw new Error(`import dekinai ${n}, ${id}, ${form}`);
             const tp = this.getTanePokemon(pokemon);
             n %= 177147; // 3^11
             ret.pokemon = pokemon.pokemon.name;
