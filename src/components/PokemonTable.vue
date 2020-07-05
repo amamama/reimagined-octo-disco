@@ -118,9 +118,9 @@
                     <template v-if="!isBall(header.value)">
                         <template v-if="header.value === 'pokemonId'">
                             {{ item.item.pokemonId }}
-                            <div :class="findPokemon(item.item.pokemon).pokemon.cls.join(' ')"></div>
                         </template>
                         <template v-else-if="header.value === 'pokemon'">
+                            <div :class="findPokemon(item.item.pokemon).pokemon.cls.join(' ')"></div>
                             {{ item.item.pokemon }}
                             <span v-if="(item.item.needAllBall & 1) === 1" class="blue--text">♂</span>
                             <span v-if="(item.item.needAllBall & 2) === 2" class="red--text">♀</span>
@@ -431,8 +431,8 @@ export default class PokemonTable extends Vue {
 
 <style scoped>
     table, tr, td, th {border-collapse: collapse; border-color: aliceblue; }
-    .pokemonId {max-width: 120px; width: 120px; min-width: 120px; }
-    .pokemon {max-width: 160px; width: 160px; min-width: 160px; }
+    .pokemonId {max-width: 60px; width: 60px; min-width: 60px; }
+    .pokemon {max-width: 240px; width: 240px; min-width: 240px; }
     .ability {max-width: 160px; width: 160px; min-width: 160px;}
     .love { background-color: rgba(255, 225, 255, 1); }
     .moon { background-color: rgba(236, 236, 255, 1); }
