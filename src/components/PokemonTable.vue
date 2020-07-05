@@ -401,7 +401,7 @@ export default class PokemonTable extends Vue {
             const idAndForm = Math.floor(n / 177147);
             const id = Math.floor(idAndForm / 8);
             const form = idAndForm % 8;
-            const pokemon = this.pokemonList.filter((p) => this.getPokemonId(p).startsWith(`n${id}`))[form];
+            const pokemon = this.pokemonList.filter((p) => (new RegExp(`n${id}(\$|[a-z])`)).test(this.getPokemonId(p)))[form];
             if(!pokemon) throw new Error(`import dekinai ${id}, ${form}`);
             const tp = this.getTanePokemon(pokemon);
             n %= 177147; // 3^11
